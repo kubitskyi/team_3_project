@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 import uvicorn
 
+from src.routes import posts  
 from src.routes import users
+app.include_router(posts.router, prefix='/api')  
+
 
 app = FastAPI()
 
