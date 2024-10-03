@@ -41,7 +41,7 @@ files = [
     {file = "anyio-4.6.0.tar.gz", hash = "sha256:137b4559cbb034c477165047febb6ff83f390fc3b20bf181c1fc0a728cb8beeb"},
 ]
 
-[package.dependencies]
+[package.dependencies]python -m venv .venv
 idna = ">=2.8"
 sniffio = ">=1.1"
 
