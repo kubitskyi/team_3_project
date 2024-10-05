@@ -1,13 +1,16 @@
-from sqlalchemy import Column, Integer, String, Text, Boolean, DECIMAL, func, Enum
+from sqlalchemy import Column, Integer, String, Text, Boolean, DECIMAL, func
+from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.sql.sqltypes import DateTime
 from sqlalchemy.orm import relationship
+from enum import Enum
+# pylint: disable=E1102
 
 
 Base = declarative_base()
 
-class _RoleEnum(Enum):
+class RoleEnum(Enum):
     """Roles for user"""
     user = "user"
     admin = "admin"
@@ -44,7 +47,7 @@ class User(Base):
     is_online = Column(Boolean, default=False)
     avatar = Column(String(255), nullable=True)
     rate = Column(Integer)
-    role = Column(Enum(_RoleEnum), default=_RoleEnum.user)
+    role = Column(SQLAlchemyEnum(RoleEnum), default=RoleEnum.user)
 
 
 class Post(Base):
@@ -87,7 +90,7 @@ class Post(Base):
     )
     img_origin = Column(
         ForeignKey('images.id', ondelete='CASCADE'),
-        default=None
+        default=None,
     )
     content = Column(Text, nullable=True)
     rate = Column(DECIMAL, nullable=True)
