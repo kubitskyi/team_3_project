@@ -233,5 +233,21 @@ class Comment(Base):
     created_at = Column(DateTime, default=func.now())
     modified = Column(DateTime, default=func.now(), onupdate=func.now())
 
+class Photo(Base):
+    __tablename__ = 'photos'
+    id = Column(Integer, primary_key=True, index=True)
+    image_url = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    tags = relationship('Tag', secondary=photo_tag_association, back_populates="photos")
+    user_id = Column(Integer, ForeignKey('users.id'))
+    user = relationship("User", back_populates="photos")
+
+class Tag(Base):
+    __tablename__ = 'tags'
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
+    photos = relationship('Photo', secondary=photo_tag_association, back_populates="tags")
+
+    User.photos = relationship('Photo', back_populates='user')  
     author = relationship('User', backref="comments")
     post = relationship('Post', backref="comments")
