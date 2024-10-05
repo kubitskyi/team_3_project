@@ -10,7 +10,7 @@ app.include_router(users.router, prefix='/api')
 
 @app.get("/")
 def read_root():
-    return {"message": "Hello World"}
+    return {"message": "Team-3 App is alive"}
 
 if __name__ == "__main__":
     uvicorn.run(
