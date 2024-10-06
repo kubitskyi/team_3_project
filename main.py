@@ -41,7 +41,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Team-3-Insta", lifespan=lifespan)
 
-app.include_router(posts.router, prefix='/api')  
 app.include_router(users.router, prefix='/api')
 app.include_router(posts.router, prefix='/api')
 
