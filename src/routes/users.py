@@ -10,12 +10,12 @@ from fastapi_limiter.depends import RateLimiter
 
 from src.database.connect import get_db
 from src.database.models import User
-from src.conf.config import settings
 from src.schemas.users import (
     UserCreate, UserReturn, UserCreationResp, TokenModel, RequestEmail
 )
 from src.repository.users import (
-    get_user_by_email, create_user, update_token, confirmed_check_toggle, update_avatar
+    get_user_by_email, get_user_by_name, create_user, update_token, confirmed_check_toggle,
+    update_avatar, delete_avatar
 )
 from src.services.auth import auth_service as auth_s
 from src.services.mail import send_email
@@ -127,7 +127,7 @@ async def login(
             detail="UserRouter: User not confirmed"
         )
 
-    access_token_ = await auth_s.create_access_token(data={"sub": user.email, "role": user.role})
+    access_token_ = await auth_s.create_access_token(data={"sub": user.email})
     refresh_token_ = await auth_s.create_refresh_token(data={"sub": user.email})
 
     await update_token(user, refresh_token_, db)
@@ -266,7 +266,7 @@ async def request_email(
     return {"message": "Check your email for confirmation."}
 
 
-@router.get("/me/", response_model=UserReturn)
+@router.get("/user", response_model=UserReturn)
 async def read_users_me(current_user: User = Depends(auth_s.get_current_user)) -> UserReturn:
     """Get the current authenticated user's details.
 
@@ -283,7 +283,7 @@ async def read_users_me(current_user: User = Depends(auth_s.get_current_user)) -
     return current_user
 
 
-@router.patch('/avatar', response_model=UserReturn)
+@router.patch('/user/avatar', response_model=UserReturn)
 async def update_avatar_user(
     file: UploadFile = File(),
     current_user: User = Depends(auth_s.get_current_user),
@@ -305,20 +305,13 @@ async def update_avatar_user(
     Returns:
         UserReturn: The updated user profile with the new avatar URL.
     """
-    cloudinary.config(
-        cloud_name=settings.cloudinary_name,
-        api_key=settings.cloudinary_api_key,
-        api_secret=settings.cloudinary_api_secret,
-        secure=True
-    )
-
     r = cloudinary.uploader.upload(
         file.file,
-        public_id=f'App/{current_user.name}',
+        public_id=f'PixnTalk/{current_user.name}',
         overwrite=True
     )
     src_url = cloudinary.CloudinaryImage(
-        f'NotesApp/{current_user.name}'
+        f'PixnTalk/{current_user.name}'
     ).build_url(
         width=250,
         height=250,
@@ -327,3 +320,16 @@ async def update_avatar_user(
     )
     user = await update_avatar(current_user.email, src_url, db)
     return user
+
+
+@router.delete('/user/avatar', response_model=dict)
+async def delete_avatar_user(
+    username: str,
+    current_user: User = Depends(auth_s.get_current_user),
+    db: Session = Depends(get_db)
+) -> dict:
+    owner = await get_user_by_name(username, db)
+    check = await auth_s.check_access(current_user, owner.id)
+    if check:
+        await delete_avatar(owner, db)
+        return {"message": "Avatar deleted."}

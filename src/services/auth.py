@@ -2,7 +2,7 @@
 from typing import Optional
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
-from fastapi import HTTPException, status, Depends, Request
+from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
@@ -198,8 +198,6 @@ class Auth:
             token (str, optional): The access token extracted from the request.
                 Defaults to Depends(oauth2_scheme).
             db (Session, optional): The database session. Defaults to Depends(get_db).
-            required_roles (list, optional): Roles required for access.
-                Defaults to ["moderator", "admin"].
 
         Raises:
             HTTPException: If the token is invalid, expired, or the user cannot be found.
@@ -218,7 +216,6 @@ class Auth:
 
             if payload['scope'] == 'access_token':
                 email = payload["sub"]
-                user_role = payload.get("role")
                 if email is None:
                     print("AuthServices: no email")
                     raise credentials_exception
@@ -268,15 +265,35 @@ class Auth:
         self,
         user: User,
         owner_id: int,
-        required_roles: list = ["moderator", "admin"]
-    ):
-        credentials_exception = HTTPException(
+        allowed_roles: list = None
+    ) -> bool:
+        """Check if the user has access to a resource.
+
+        This function checks whether a user has access to a resource based on their
+        ownership of the resource or their role. A user can access the resource if
+        they are the owner or if they have one of the required roles (e.g., 'moderator' or 'admin').
+
+        Args:
+            user (User): The user object, containing user details such as ID and role.
+            owner_id (int): The ID of the resource owner.
+            allowed_roles (list, optional): A list of roles that are allowed access.
+                Defaults to `["moderator", "admin"]`.
+
+        Raises:
+            HTTPException: If the user is neither the owner of the resource nor
+            has one of the required roles, a 403 Forbidden exception is raised.
+
+        Returns:
+            bool: Returns `True` if the user is the owner or has one of the required roles,
+            otherwise raises an exception.
+        """
+        if allowed_roles is None:
+            allowed_roles = ["moderator", "admin"]
+        if user.id != owner_id and user.role not in allowed_roles:
+            raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="AuthServices: Access denied",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="AuthServices: Access denied"
         )
-        if user.id != owner_id and user.role not in required_roles:
-            raise credentials_exception
         return True
 
 

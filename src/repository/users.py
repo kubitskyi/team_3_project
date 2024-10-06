@@ -18,6 +18,19 @@ async def get_user_by_email(email: str, db: Session) -> User:
     return db.query(User).filter(User.email == email).first()
 
 
+async def get_user_by_name(name: str, db: Session) -> User:
+    """Retrieve a user from the database by their name.
+
+    Args:
+        name (str): The name of the user to retrieve.
+        db (Session): The database session used for querying the user.
+
+    Returns:
+        User: The user object if found, otherwise None.
+    """
+    return db.query(User).filter(User.name == name).first()
+
+
 async def create_user(body: UserCreate, db: Session) -> User:
     """Create a new user in the database.
 
@@ -88,3 +101,7 @@ async def update_avatar(email, url: str, db: Session) -> User:
     user.avatar = url
     db.commit()
     return user
+
+async def delete_avatar(user: User, db: Session) -> None:
+    user.avatar = None
+    db.commit()
