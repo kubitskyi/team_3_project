@@ -26,7 +26,7 @@ async def send_email(email: EmailStr, username: str, host: str) -> None:
     try:
         token_verification = auth_service.create_email_token({"sub": email})
         message = MessageSchema(
-            subject="Confirm your email on Team-3-Insta",
+            subject="Confirm your email on PixnTalk",
             recipients=[email],
             template_body={
                 "host": host,

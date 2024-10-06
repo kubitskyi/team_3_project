@@ -36,10 +36,10 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    r.close()
+    await r.close()
 
 
-app = FastAPI(title="Team-3-Insta", lifespan=lifespan)
+app = FastAPI(title="PixnTalk", lifespan=lifespan)
 
 app.include_router(users.router, prefix='/api')
 app.include_router(posts.router, prefix='/api')
@@ -48,7 +48,7 @@ app.include_router(posts.router, prefix='/api')
 @app.get("/", dependencies=[Depends(RateLimiter(times=5, seconds=30))])
 def read_root():
     """Healthchecker"""
-    return {"message": "Team-3 App is alive"}
+    return {"message": "PixnTalk API is alive"}
 
 
 if __name__ == "__main__":

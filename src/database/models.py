@@ -6,7 +6,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.sql.sqltypes import DateTime
 from sqlalchemy.orm import relationship
-# pylint: disable=E1102, C0103
+# pylint: disable=E1102, C0103, R0903
 
 
 Base = declarative_base()

@@ -127,7 +127,7 @@ async def login(
             detail="UserRouter: User not confirmed"
         )
 
-    access_token_ = await auth_s.create_access_token(data={"sub": user.email})
+    access_token_ = await auth_s.create_access_token(data={"sub": user.email, "role": user.role})
     refresh_token_ = await auth_s.create_refresh_token(data={"sub": user.email})
 
     await update_token(user, refresh_token_, db)
@@ -217,7 +217,10 @@ async def confirmed_email(token: str, db: Session = Depends(get_db)) -> dict:
     email = await auth_s.get_email_from_token(token)
     user = await get_user_by_email(email, db)
     if user is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="UserRouter: Verification error")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="UserRouter: Verification error"
+        )
     if user.is_active:
         return {"message": "UserRouter: Your email is already confirmed"}
     await confirmed_check_toggle(email, db)

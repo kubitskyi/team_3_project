@@ -2,7 +2,7 @@
 from typing import Optional
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException, status, Depends, Request
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
@@ -198,6 +198,8 @@ class Auth:
             token (str, optional): The access token extracted from the request.
                 Defaults to Depends(oauth2_scheme).
             db (Session, optional): The database session. Defaults to Depends(get_db).
+            required_roles (list, optional): Roles required for access.
+                Defaults to ["moderator", "admin"].
 
         Raises:
             HTTPException: If the token is invalid, expired, or the user cannot be found.
@@ -216,6 +218,7 @@ class Auth:
 
             if payload['scope'] == 'access_token':
                 email = payload["sub"]
+                user_role = payload.get("role")
                 if email is None:
                     print("AuthServices: no email")
                     raise credentials_exception
@@ -259,6 +262,22 @@ class Auth:
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="AuthServices: Invalid token for email verification"
             ) from e
+
+
+    async def check_access(
+        self,
+        user: User,
+        owner_id: int,
+        required_roles: list = ["moderator", "admin"]
+    ):
+        credentials_exception = HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="AuthServices: Access denied",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        if user.id != owner_id and user.role not in required_roles:
+            raise credentials_exception
+        return True
 
 
 #  Import this to make all routers use one instanse of class
