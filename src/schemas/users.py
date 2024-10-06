@@ -18,7 +18,7 @@ class UserCreate(BaseModel):
         password (str): The user's password, with a minimum length of 8 and
             a maximum length of 25 characters.
     """
-    username: str = Field(min_length=4, max_length=50)
+    name: str = Field(min_length=4, max_length=50)
     email: EmailStr
     password: str = Field(min_length=8, max_length=25)
 
@@ -40,7 +40,7 @@ class UserReturn(BaseModel):
             (like SQLAlchemy models) to JSON.
     """
     id: int
-    username: str
+    name: str
     email: EmailStr
     created_at: datetime
     modified: datetime

@@ -21,7 +21,7 @@ from src.services.auth import auth_service as auth_s
 from src.services.mail import send_email
 
 
-router = APIRouter(prefix='/api/auth', tags=["auth"])
+router = APIRouter(prefix='/auth', tags=["auth"])
 get_refr_token = HTTPBearer()
 
 
@@ -39,13 +39,13 @@ async def signup(
 ) -> dict:
     """Handles user registration by creating a new user account.
 
-    This endpoint allows a new user to register by providing their username, email, and password.
+    This endpoint allows a new user to register by providing their name, email, and password.
     The password is hashed before being stored in the database. If the email is already in use,
     an HTTP 409 Conflict error is raised.
 
     Args:
         body (UserScema): The request body containing the new user's data, including
-            username, email, and password.
+            name, email, and password.
         db (Session, optional): The database session dependency, automatically injected by FastAPI.
 
     Raises:
@@ -63,13 +63,13 @@ async def signup(
     if user_:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Account already exists"
+            detail="UserRouter: Account already exists"
         )
 
     body.password = auth_s.get_password_hash(body.password)
     new_user = await create_user(body, db)
 
-    bt.add_task(send_email, new_user.email, new_user.username, str(request.base_url))
+    bt.add_task(send_email, new_user.email, new_user.name, str(request.base_url))
     return {
         "user": new_user,
         "detail": "User successfully created. Check your email for confirmation."
@@ -87,13 +87,13 @@ async def login(
 ) -> TokenModel:
     """Authenticates a user and generates access and refresh tokens.
 
-    This endpoint allows a registered user to log in by providing their email (as username)
+    This endpoint allows a registered user to log in by providing their email (as name)
     and password. If the credentials are correct, it returns a pair of JWT tokens:
     an access token and a refresh token. If the credentials are incorrect, an appropriate
     HTTP error is raised.
 
     Args:
-        body (OAuth2PasswordRequestForm, optional): The login form data containing the username
+        body (OAuth2PasswordRequestForm, optional): The login form data containing the name
         (email) and password. This is automatically populated by FastAPI using dependency injection.
         db (Session, optional): The database session dependency, automatically injected by FastAPI.
 
@@ -112,19 +112,19 @@ async def login(
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Invalid data"
+            detail="UserRouter: Invalid data"
         )
 
     if not auth_s.verify_password(body.password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid data"
+            detail="UserRouter: Invalid data"
         )
 
     if user.is_active is False:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not confirmed"
+            detail="UserRouter: User not confirmed"
         )
 
     access_token_ = await auth_s.create_access_token(data={"sub": user.email})
@@ -177,7 +177,7 @@ async def refresh_token(
         await update_token(user, None, db)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid refresh token"
+            detail="UserRouter: Invalid refresh token"
         )
 
     access_token = await auth_s.create_access_token(data={"sub": email})
@@ -217,11 +217,11 @@ async def confirmed_email(token: str, db: Session = Depends(get_db)) -> dict:
     email = await auth_s.get_email_from_token(token)
     user = await get_user_by_email(email, db)
     if user is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Verification error")
-    if user.is_astive:
-        return {"message": "Your email is already confirmed"}
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="UserRouter: Verification error")
+    if user.is_active:
+        return {"message": "UserRouter: Your email is already confirmed"}
     await confirmed_check_toggle(email, db)
-    return {"message": "Email confirmed"}
+    return {"message": "App: Email confirmed"}
 
 
 @router.post(
@@ -255,10 +255,10 @@ async def request_email(
     """
     user = await get_user_by_email(body.email, db)
 
-    if user.is_astive:
+    if user.is_active:
         return {"message": "Your email is already confirmed"}
     if user:
-        bt.add_task(send_email, user.email, user.username, str(request.base_url))
+        bt.add_task(send_email, user.email, user.name, str(request.base_url))
 
     return {"message": "Check your email for confirmation."}
 
@@ -311,11 +311,11 @@ async def update_avatar_user(
 
     r = cloudinary.uploader.upload(
         file.file,
-        public_id=f'App/{current_user.username}',
+        public_id=f'App/{current_user.name}',
         overwrite=True
     )
     src_url = cloudinary.CloudinaryImage(
-        f'NotesApp/{current_user.username}'
+        f'NotesApp/{current_user.name}'
     ).build_url(
         width=250,
         height=250,

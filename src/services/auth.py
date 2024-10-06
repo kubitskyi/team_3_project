@@ -1,14 +1,13 @@
 """Token operations"""
-import os
 from typing import Optional
 from datetime import datetime, timedelta, timezone
-from dotenv import load_dotenv
 from jose import JWTError, jwt
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
+from src.conf.config import settings
 from src.database.connect import get_db
 from src.repository.users import get_user_by_email
 from src.database.models import User
@@ -29,10 +28,9 @@ class Auth:
         oauth2_scheme (OAuth2PasswordBearer): Dependency to extract the bearer token
             from the request for protected routes.
     """
-    load_dotenv()
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    SECRET_KEY = os.getenv("SECRET_KEY")
-    ALGORITHM = os.getenv("ALGORYTHM")
+    SECRET_KEY = settings.secret_key
+    ALGORITHM = settings.algorithm
     oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
 
@@ -175,17 +173,17 @@ class Auth:
                 return email
 
             print(
-                "HTTPException in 'src.auth.auth.decode_refresh_token': token is not refresh_token"
+                "AuthServices: token is not refresh_token"
             )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail='Invalid scope for token'
             )
         except JWTError as e:
-            print(f"JWT Error in 'src.auth.auth.decode_refresh_token': {e}")
+            print(f"JWT Error in AuthServices: {e}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Could not validate credentials'
+                detail='AuthServices: Could not validate credentials'
             ) from e
 
 
@@ -209,7 +207,7 @@ class Auth:
         """
         credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
+            detail="AuthServices: Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -219,14 +217,14 @@ class Auth:
             if payload['scope'] == 'access_token':
                 email = payload["sub"]
                 if email is None:
-                    print("Error in 'src.auth.auth.get_current_user': no email")
+                    print("AuthServices: no email")
                     raise credentials_exception
             else:
-                print("Error in 'src.auth.auth.get_current_user': token is not access_token")
+                print("AuthServices: token is not access_token")
                 raise credentials_exception
 
         except JWTError as e:
-            print(f"JWT Error in 'src.auth.auth.get_current_user': {e}")
+            print(f"JWT Error in AuthServices: {e}")
             raise credentials_exception from e
 
         user = await get_user_by_email(email, db)
@@ -259,7 +257,7 @@ class Auth:
             print(f"JWT Error in 'src.auth.auth.get_email_from_token': {e}")
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="Invalid token for email verification"
+                detail="AuthServices: Invalid token for email verification"
             ) from e
 
 

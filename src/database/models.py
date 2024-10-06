@@ -76,8 +76,8 @@ class Tag(Base):
     photos = relationship('Photo', secondary=photo_tag_association, back_populates="tags")
 
     User.photos = relationship('Photo', back_populates='user')
-    author = relationship('User', backref="comments")
-    post = relationship('Post', backref="comments")
+    # author = relationship("User", backref="tags")
+    # post = relationship('Post', backref="comments")
 
 
 class Comment(Base):

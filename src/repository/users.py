@@ -31,6 +31,10 @@ async def create_user(body: UserCreate, db: Session) -> User:
     new_user = User(**body.model_dump())
     new_user.rate = 0
 
+    check = db.query(User).count()
+    if not check:
+        new_user.role = "admin"
+
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
