@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from src.database.models import Photo, Tag
 from fastapi import HTTPException
+from typing import List
 
 def create_photo(file, description: str, tags: List[str], db: Session):
     # Логіка для завантаження фото та створення запису в базі

@@ -3,11 +3,11 @@ import uvicorn
 
 from src.routes import posts  
 from src.routes import users
-app.include_router(posts.router, prefix='/api')  
 
 
 app = FastAPI()
 
+app.include_router(posts.router, prefix='/api')  
 app.include_router(users.router, prefix='/api')
 
 
