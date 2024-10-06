@@ -1,6 +1,6 @@
 """Models"""
 from enum import Enum
-from sqlalchemy import Table, Column, Integer, String, Text, Boolean, func
+from sqlalchemy import Table, Column, Integer, String, Text, Boolean, func, DECIMAL
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.schema import ForeignKey
@@ -120,7 +120,9 @@ class Comment(Base):
     )
 
     content = Column(Text, nullable=True)
-    rate = Column(Integer, nullable=True)
+    rate = Column(DECIMAL, nullable=True)
+    rate_sum = Column(Integer, default=0)
+    rate_count = Column(Integer, default=0)
     is_active = Column(Boolean, default=False)
     created_at = Column(DateTime, default=func.now())
     modified = Column(DateTime, default=func.now(), onupdate=func.now())

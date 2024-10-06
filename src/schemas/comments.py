@@ -1,11 +1,10 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, conint
 from typing import Optional
 from datetime import datetime
 
 
 class CommentBase(BaseModel):
     content: str = Field(max_length=500)
-    rate: Optional[int] = Field(None, ge=1, le=10)
 
 
 class CommentCreate(CommentBase):
@@ -19,9 +18,13 @@ class CommentUpdate(BaseModel):
 class CommentResponse(CommentBase):
     id: int
     author_id: int
-    post_id: int
+    photo_id: int
     created_at: datetime
     modified: datetime
 
     class Config:
         orm_mode = True
+
+
+class RateComment(BaseModel):
+    rate: int = Field(ge=1, le=10)

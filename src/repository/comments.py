@@ -4,8 +4,8 @@ from schemas.comments import CommentCreate, CommentUpdate, CommentResponse, Comm
 from fastapi import HTTPException, status
 
 
-def create_comment(db: Session, author_id: int, post_id: int, comment: CommentCreate):
-    db_comment = Comment(author_id=author_id, post_id=post_id, **comment.dict())
+def create_comment(db: Session, author_id: int, photo_id: int, comment: CommentCreate):
+    db_comment = Comment(author_id=author_id, photo_id=photo_id, **comment.dict())
     db.add(db_comment)
     db.commit()
     db.refresh(db_comment)
@@ -34,8 +34,8 @@ def delete_comment(db: Session, comment_id: int):
     return {"detail": "Comment deleted successfully"}
 
 
-def get_comments_by_post(db: Session, post_id: int):
-    return db.query(Comment).filter(Comment.post_id == post_id).all()
+def get_comments_by_photo(db: Session, photo_id: int):
+    return db.query(Comment).filter(Comment.photo_id == photo_id).all()
 
 
 def rate_comment(db: Session, comment_id: int, rate: int):
@@ -43,7 +43,12 @@ def rate_comment(db: Session, comment_id: int, rate: int):
     if not db_comment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
     
-    db_comment.rate = rate
-    db.commit()
-    db.refresh(db_comment)
+    if db_comment:
+        db_comment.rate_sum += rate
+        db_comment.rate_count += 1
+        db_comment.rate = db_comment.rate_sum / db_comment.rate_count
+
+        db.commit()
+        db.refresh(db_comment)
+
     return db_comment
