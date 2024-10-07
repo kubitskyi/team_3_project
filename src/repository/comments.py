@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from database.models import Comment
-from schemas.comments import CommentCreate, CommentUpdate, CommentResponse, CommentBase
+from src.database.models import Comment
+from src.schemas.comments import CommentCreate, CommentUpdate, CommentResponse, CommentBase
 from fastapi import HTTPException, status
 
 
