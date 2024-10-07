@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
 import uvicorn
+import cloudinary
 import redis.asyncio as redis
 from fastapi_limiter import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter
@@ -35,12 +36,19 @@ async def lifespan(app: FastAPI):
     )
     await FastAPILimiter.init(r)
 
+    cloudinary.config(
+        cloud_name=settings.cloudinary_name,
+        api_key=settings.cloudinary_api_key,
+        api_secret=settings.cloudinary_api_secret,
+        secure=True
+    )
+
     yield
 
-    r.close()
+    await r.close()
 
 
-app = FastAPI(title="Team-3-Insta", lifespan=lifespan)
+app = FastAPI(title="PixnTalk", lifespan=lifespan)
 
 app.include_router(users.router, prefix='/api')
 app.include_router(posts.router, prefix='/api')
@@ -50,7 +58,7 @@ app.include_router(comments.router, prefix='/api')
 @app.get("/", dependencies=[Depends(RateLimiter(times=5, seconds=30))])
 def read_root():
     """Healthchecker"""
-    return {"message": "Team-3 App is alive"}
+    return {"message": "PixnTalk API is alive"}
 
 
 if __name__ == "__main__":
