@@ -266,7 +266,7 @@ class Auth:
         user: User,
         owner_id: int,
         allowed_roles: list = None
-    ) -> bool:
+    ) -> True:
         """Check if the user has access to a resource.
 
         This function checks whether a user has access to a resource based on their
@@ -284,12 +284,27 @@ class Auth:
             has one of the required roles, a 403 Forbidden exception is raised.
 
         Returns:
-            bool: Returns `True` if the user is the owner or has one of the required roles,
+            True: Returns `True` if the user is the owner or has one of the required roles,
             otherwise raises an exception.
         """
         if allowed_roles is None:
             allowed_roles = ["moderator", "admin"]
         if user.id != owner_id and user.role not in allowed_roles:
+            raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="AuthServices: Access denied"
+        )
+        return True
+
+
+    async def check_admin(
+        self,
+        user: User,
+        allowed_roles: list = None
+    ) -> True:
+        if allowed_roles is None:
+            allowed_roles = ["moderator", "admin"]
+        if user.role not in allowed_roles:
             raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="AuthServices: Access denied"

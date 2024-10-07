@@ -1,24 +1,24 @@
 """Router for authentification"""
 import cloudinary
 import cloudinary.uploader
+from sqlalchemy.orm import Session
+from fastapi_limiter.depends import RateLimiter
 from fastapi import (
     APIRouter, HTTPException, Depends, status, Security, BackgroundTasks, Request, UploadFile, File
 )
 from fastapi.security import OAuth2PasswordRequestForm, HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy.orm import Session
-from fastapi_limiter.depends import RateLimiter
-
+from main import r
 from src.database.connect import get_db
 from src.database.models import User
+from src.services.mail import send_email
+from src.services.auth import auth_service as auth_s
 from src.schemas.users import (
     UserCreate, UserReturn, UserCreationResp, TokenModel, RequestEmail
 )
 from src.repository.users import (
     get_user_by_email, get_user_by_name, create_user, update_token, confirmed_check_toggle,
-    update_avatar, delete_avatar
+    update_avatar, delete_avatar, ban_offender
 )
-from src.services.auth import auth_service as auth_s
-from src.services.mail import send_email
 
 
 router = APIRouter(prefix='/auth', tags=["auth"])
@@ -114,22 +114,26 @@ async def login(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="UserRouter: Invalid data"
         )
-
     if not auth_s.verify_password(body.password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="UserRouter: Invalid data"
         )
-
     if user.is_active is False:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="UserRouter: User not confirmed"
+            detail="UserRouter: User is not confirmed"
+        )
+    if user.banned:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="UserRouter: User is banned."
         )
 
     access_token_ = await auth_s.create_access_token(data={"sub": user.email})
     refresh_token_ = await auth_s.create_refresh_token(data={"sub": user.email})
 
+    await r.set(f"user_token:{user.id}", access_token_, ex=900)
     await update_token(user, refresh_token_, db)
     return {
         "access_token": access_token_,
@@ -183,6 +187,7 @@ async def refresh_token(
     access_token = await auth_s.create_access_token(data={"sub": email})
     refresh_token_ = await auth_s.create_refresh_token(data={"sub": email})
 
+    await r.set(f"user_token:{user.id}", access_token, ex=900)
     await update_token(user, refresh_token_, db)
     return {
         "access_token": access_token,
@@ -280,6 +285,8 @@ async def read_users_me(current_user: User = Depends(auth_s.get_current_user)) -
     Returns:
         UserReturn: A model representing the authenticated user's details.
     """
+    online = await r.get(f"user_token:{current_user.id}")
+    current_user.is_online = online
     return current_user
 
 
@@ -332,4 +339,18 @@ async def delete_avatar_user(
     check = await auth_s.check_access(current_user, owner.id)
     if check:
         await delete_avatar(owner, db)
+        return {"message": "Avatar deleted."}
+
+
+@router.patch('/user/ban', response_model=dict)
+async def ban_user(
+    username: str,
+    confirmation: bool,
+    current_user: User = Depends(auth_s.get_current_user),
+    db: Session = Depends(get_db)
+) -> dict:
+    offender = await get_user_by_name(username, db)
+    check = await auth_s.check_admin(current_user, ['admin'])
+    if check and confirmation:
+        await ban_offender(offender, db)
         return {"message": "Avatar deleted."}

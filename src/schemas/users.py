@@ -44,7 +44,6 @@ class UserReturn(BaseModel):
     email: EmailStr
     created_at: datetime
     modified: datetime
-    is_online: bool
     avatar: str | None
     rate: int
     role: str

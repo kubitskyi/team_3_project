@@ -105,3 +105,7 @@ async def update_avatar(email, url: str, db: Session) -> User:
 async def delete_avatar(user: User, db: Session) -> None:
     user.avatar = None
     db.commit()
+
+async def ban_offender(user: User, db: Session) -> None:
+    user.banned = True
+    db.commit()
