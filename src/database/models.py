@@ -3,6 +3,14 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.sql.sqltypes import DateTime
 from sqlalchemy.orm import relationship
+from sqlalchemy import Table, Column, ForeignKey
+
+photo_tag_association = Table(
+    'photo_tag_association',
+    Base.metadata,
+    Column('photo_id', ForeignKey('photos.id'), primary_key=True),
+    Column('tag_id', ForeignKey('tags.id'), primary_key=True)
+)
 
 
 Base = declarative_base()
