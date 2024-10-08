@@ -118,7 +118,6 @@ class Comment(Base):
         ForeignKey('photos.id', ondelete='CASCADE'),
         default=None
     )
-
     content = Column(Text, nullable=True)
     rate = Column(DECIMAL, nullable=True)
     rate_sum = Column(Integer, default=0)
