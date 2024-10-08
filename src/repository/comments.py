@@ -44,7 +44,9 @@ def rate_comment(db: Session, comment_id: int, rate: int):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
     
     if db_comment:
-        db_comment.rate_sum += rate
+        print("="*25)
+        print(type(rate))
+        db_comment.rate_sum += rate.rate
         db_comment.rate_count += 1
         db_comment.rate = db_comment.rate_sum / db_comment.rate_count
 

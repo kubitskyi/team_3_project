@@ -21,9 +21,9 @@ class CommentResponse(CommentBase):
     photo_id: int
     created_at: datetime
     modified: datetime
-
+    
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class RateComment(BaseModel):

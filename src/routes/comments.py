@@ -57,6 +57,6 @@ def rate_existing_comment(
     if not current_user:
          raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You are not our user")
 
-    if not (1 <= rate <= 10):
+    if not (1 <= rate.rate <= 10):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Rate must be between 1 and 10")
     return rate_comment(db, comment_id=comment_id, rate=rate)
