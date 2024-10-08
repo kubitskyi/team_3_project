@@ -42,8 +42,7 @@ async def create_user(body: UserCreate, db: Session) -> User:
         User: The newly created user object.
     """
     new_user = User(**body.model_dump())
-    new_user.rate = 0
-
+    # Check if this is first user
     check = db.query(User).count()
     if not check:
         new_user.role = "admin"

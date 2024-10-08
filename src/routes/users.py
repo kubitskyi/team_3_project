@@ -1,4 +1,4 @@
-"""Router for authentification"""
+"""Router for authentification and work with users"""
 import cloudinary
 import cloudinary.uploader
 from sqlalchemy.orm import Session
@@ -7,7 +7,7 @@ from fastapi import (
     APIRouter, HTTPException, Depends, status, Security, BackgroundTasks, Request, UploadFile, File
 )
 from fastapi.security import OAuth2PasswordRequestForm, HTTPAuthorizationCredentials, HTTPBearer
-from main import r
+
 from src.database.connect import get_db
 from src.database.models import User
 from src.services.mail import send_email
@@ -23,6 +23,9 @@ from src.repository.users import (
 
 router = APIRouter(prefix='/auth', tags=["auth"])
 get_refr_token = HTTPBearer()
+
+def get_redis(request: Request):
+    return request.app.state.redis
 
 
 @router.post(
@@ -59,16 +62,13 @@ async def signup(
             - "detail": A message indicating the user was successfully created.
     """
     user_ = await get_user_by_email(body.email, db)
-
     if user_:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="UserRouter: Account already exists"
         )
-
     body.password = auth_s.get_password_hash(body.password)
     new_user = await create_user(body, db)
-
     bt.add_task(send_email, new_user.email, new_user.name, str(request.base_url))
     return {
         "user": new_user,
@@ -83,7 +83,8 @@ async def signup(
 )
 async def login(
     body: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    redis = Depends(get_redis)
 ) -> TokenModel:
     """Authenticates a user and generates access and refresh tokens.
 
@@ -108,7 +109,6 @@ async def login(
             and the token type (bearer).
     """
     user = await get_user_by_email(body.username, db)
-
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -129,17 +129,39 @@ async def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="UserRouter: User is banned."
         )
-
     access_token_ = await auth_s.create_access_token(data={"sub": user.email})
     refresh_token_ = await auth_s.create_refresh_token(data={"sub": user.email})
-
-    await r.set(f"user_token:{user.id}", access_token_, ex=900)
+    await redis.set(f"user_token:{user.id}", access_token_, ex=900)
     await update_token(user, refresh_token_, db)
     return {
         "access_token": access_token_,
         "refresh_token": refresh_token_,
         "token_type": "bearer"
     }
+
+
+@router.post("/logout", response_model=dict)
+async def logout(
+    current_user: User = Depends(auth_s.get_current_user),
+    db: Session = Depends(get_db),
+    redis = Depends(get_redis)
+) -> dict:
+    """Logs out the current authenticated user.
+
+    This endpoint allows the user to log out by removing their access token
+    from the Redis cache, effectively invalidating it.
+
+    Args:
+        current_user (User, optional): The current authenticated user.
+            Injected via `Depends(auth_s.get_current_user)`.
+        db (Session, optional): The database session dependency. Injected via `Depends(get_db)`.
+
+    Returns:
+        dict: A message indicating that the user has successfully logged out.
+    """
+    await redis.delete(f"user_token:{current_user.id}")
+    await update_token(current_user, None, db)
+    return {"message": "Successfully logged out."}
 
 
 @router.get(
@@ -149,7 +171,8 @@ async def login(
 )
 async def refresh_token(
     credentials: HTTPAuthorizationCredentials = Security(get_refr_token),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    redis = Depends(get_redis)
 ) -> TokenModel:
     """Refreshes the JWT access and refresh tokens for a user.
 
@@ -176,18 +199,15 @@ async def refresh_token(
     token = credentials.credentials
     email = await auth_s.decode_refresh_token(token)
     user = await get_user_by_email(email, db)
-
     if user.refresh_token != token:
         await update_token(user, None, db)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="UserRouter: Invalid refresh token"
         )
-
     access_token = await auth_s.create_access_token(data={"sub": email})
     refresh_token_ = await auth_s.create_refresh_token(data={"sub": email})
-
-    await r.set(f"user_token:{user.id}", access_token, ex=900)
+    await redis.set(f"user_token:{user.id}", access_token, ex=900)
     await update_token(user, refresh_token_, db)
     return {
         "access_token": access_token,
@@ -262,17 +282,18 @@ async def request_email(
                 requested.
     """
     user = await get_user_by_email(body.email, db)
-
     if user.is_active:
         return {"message": "Your email is already confirmed"}
     if user:
         bt.add_task(send_email, user.email, user.name, str(request.base_url))
-
     return {"message": "Check your email for confirmation."}
 
 
 @router.get("/user", response_model=UserReturn)
-async def read_users_me(current_user: User = Depends(auth_s.get_current_user)) -> UserReturn:
+async def read_users_me(
+    current_user: User = Depends(auth_s.get_current_user),
+    redis = Depends(get_redis)
+) -> UserReturn:
     """Get the current authenticated user's details.
 
     This endpoint retrieves the information of the currently authenticated user.
@@ -285,8 +306,8 @@ async def read_users_me(current_user: User = Depends(auth_s.get_current_user)) -
     Returns:
         UserReturn: A model representing the authenticated user's details.
     """
-    online = await r.get(f"user_token:{current_user.id}")
-    current_user.is_online = online
+    token = await redis.get(f"user_token:{current_user.id}")
+    current_user.is_online = bool(token)
     return current_user
 
 
@@ -335,6 +356,28 @@ async def delete_avatar_user(
     current_user: User = Depends(auth_s.get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
+    """Delete a user's avatar.
+
+    This endpoint allows the deletion of a user's avatar image. The user who owns the
+    avatar or a user with specific roles (such as moderator or admin) is authorized to
+    perform this action. Once the avatar is deleted, the user's profile is updated
+    to reflect the change.
+
+    Args:
+        username (str): The username of the user whose avatar is being deleted.
+        current_user (User, optional): The currently authenticated user, injected
+            via `Depends(auth_s.get_current_user)`.
+        db (Session, optional): The database session used to perform operations
+            on the user's avatar. Injected via `Depends(get_db)`.
+
+    Returns:
+        dict: A confirmation message indicating the avatar has been successfully deleted.
+
+    Raises:
+        HTTPException: If the current user is not the owner of the avatar and
+            does not have the required roles (e.g., 'moderator', 'admin'),
+            a 403 Forbidden error is raised.
+    """
     owner = await get_user_by_name(username, db)
     check = await auth_s.check_access(current_user, owner.id)
     if check:
@@ -349,6 +392,27 @@ async def ban_user(
     current_user: User = Depends(auth_s.get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
+    """Ban a user from the system.
+
+    This endpoint allows an admin user to ban another user by their username. If the
+    `confirmation` flag is set to `True`, the target user is banned, and their access
+    to the platform is revoked. Only users with the role 'admin' are authorized to perform
+    this action.
+
+    Args:
+        username (str): The username of the user to be banned.
+        confirmation (bool): A confirmation flag indicating whether the ban should be applied.
+        current_user (User, optional): The currently authenticated user, injected via
+            `Depends(auth_s.get_current_user)`.
+        db (Session, optional): The database session used to perform operations
+            on the user's account. Injected via `Depends(get_db)`.
+
+    Returns:
+        dict: A confirmation message indicating the user has been successfully banned.
+
+    Raises:
+        HTTPException: If the current user is not an admin, a 403 Forbidden error is raised.
+    """
     offender = await get_user_by_name(username, db)
     check = await auth_s.check_admin(current_user, ['admin'])
     if check and confirmation:

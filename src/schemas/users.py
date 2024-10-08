@@ -44,8 +44,10 @@ class UserReturn(BaseModel):
     email: EmailStr
     created_at: datetime
     modified: datetime
+    is_online: bool
     avatar: str | None
-    rate: int
+    photo_count: int
+    comment_count: int
     role: str
 
     class Config:

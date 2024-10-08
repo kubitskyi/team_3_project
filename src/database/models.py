@@ -56,8 +56,8 @@ class User(Base):
     is_online = Column(Boolean, default=False)
     banned = Column(Boolean, default=False)
     avatar = Column(String(255), nullable=True)
-    photo_count = Column(Integer)
-    comment_count = Column(Integer)
+    photo_count = Column(Integer, default=0)
+    comment_count = Column(Integer, default=0)
     role = Column(SQLAlchemyEnum(RoleEnum), default=RoleEnum.user)
 
 

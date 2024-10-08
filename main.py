@@ -27,15 +27,6 @@ async def lifespan(app: FastAPI):
     Yields:
         Allows the FastAPI application to run within this context, managing resources.
     """
-    global r
-    r = await redis.Redis(
-        host=settings.redis_host,
-        port=settings.redis_port,
-        db=0, encoding="utf-8",
-        decode_responses=True
-    )
-    await FastAPILimiter.init(r)
-
     cloudinary.config(
         cloud_name=settings.cloudinary_name,
         api_key=settings.cloudinary_api_key,
@@ -43,8 +34,17 @@ async def lifespan(app: FastAPI):
         secure=True
     )
 
+    global r
+    r = await redis.Redis(
+        host=settings.redis_host,
+        port=settings.redis_port,
+        db=0,
+        encoding="utf-8",
+        decode_responses=True
+    )
+    await FastAPILimiter.init(r)
+    app.state.redis = r
     yield
-
     await r.close()
 
 
