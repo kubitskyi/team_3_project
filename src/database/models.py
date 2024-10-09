@@ -59,6 +59,7 @@ class User(Base):
     photo_count = Column(Integer, default=0)
     comment_count = Column(Integer, default=0)
     role = Column(SQLAlchemyEnum(RoleEnum), default=RoleEnum.user)
+    about = Column(Text, nullable=True, default=None)
 
 
 class Photo(Base):

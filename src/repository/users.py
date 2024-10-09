@@ -83,7 +83,7 @@ async def confirmed_check_toggle(email: str, db: Session) -> None:
     user.is_active = True
     db.commit()
 
-async def update_avatar(email, url: str, db: Session) -> User:
+async def update_avatar(user: User, url: str, db: Session) -> User:
     """Update the avatar URL for a specific user.
 
     This function retrieves a user by their email, updates their avatar URL,
@@ -97,8 +97,25 @@ async def update_avatar(email, url: str, db: Session) -> User:
     Returns:
         User: The updated user object with the new avatar URL.
     """
-    user = await get_user_by_email(email, db)
     user.avatar = url
+    db.commit()
+    return user
+
+async def update_about(user: User, text: str, db: Session) -> User:
+    """Updates the user's 'about' section with the provided text.
+
+    This asynchronous function modifies the 'about' attribute of a User
+    object and commits the change to the database.
+
+    Args:
+        user (User): The user object whose 'about' section is to be updated.
+        text (str): The new text to set in the user's 'about' section.
+        db (Session): The database session used to commit the changes.
+
+    Returns:
+        User: The updated user object after modifying the 'about' section.
+    """
+    user.about = text
     db.commit()
     return user
 
@@ -111,6 +128,22 @@ async def delete_avatar(user: User, db: Session) -> None:
         db (Session): The database session used to commit the changes.
     """
     user.avatar = None
+    db.commit()
+
+async def delete_about(user: User, db: Session) -> None:
+    """Deletes the user's 'about' section by setting it to None.
+
+    This asynchronous function clears the 'about' attribute of a User
+    object and commits the change to the database.
+
+    Args:
+        user (User): The user object whose 'about' section is to be deleted.
+        db (Session): The database session used to commit the changes.
+
+    Returns:
+        None: This function does not return any value.
+    """
+    user.about = None
     db.commit()
 
 async def change_role(user: User, new_role: str, db: Session) -> None:
