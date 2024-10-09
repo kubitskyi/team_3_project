@@ -1,4 +1,4 @@
-"""Token operations"""
+"""Token operations, password checks, authentifisation checks"""
 from typing import Optional
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from src.conf.config import settings
 from src.database.connect import get_db
 from src.repository.users import get_user_by_email
-from src.database.models import User
+from src.database.models import User, RoleEnum
 
 
 class Auth:
@@ -264,20 +264,17 @@ class Auth:
     async def check_access(
         self,
         user: User,
-        owner_id: int,
-        allowed_roles: list = None
-    ) -> True:
+        owner_id: int
+) -> True:
         """Check if the user has access to a resource.
 
         This function checks whether a user has access to a resource based on their
         ownership of the resource or their role. A user can access the resource if
-        they are the owner or if they have one of the required roles (e.g., 'moderator' or 'admin').
+        they are the owner or if they have one of the required roles ('moderator' or 'admin').
 
         Args:
             user (User): The user object, containing user details such as ID and role.
             owner_id (int): The ID of the resource owner.
-            allowed_roles (list, optional): A list of roles that are allowed access.
-                Defaults to `["moderator", "admin"]`.
 
         Raises:
             HTTPException: If the user is neither the owner of the resource nor
@@ -287,9 +284,7 @@ class Auth:
             True: Returns `True` if the user is the owner or has one of the required roles,
             otherwise raises an exception.
         """
-        if allowed_roles is None:
-            allowed_roles = ["moderator", "admin"]
-        if user.id != owner_id and user.role not in allowed_roles:
+        if user.id != owner_id and user.role not in [RoleEnum.moderator, RoleEnum.admin]:
             raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="AuthServices: Access denied"
@@ -300,10 +295,26 @@ class Auth:
     async def check_admin(
         self,
         user: User,
-        allowed_roles: list = None
+        allowed_roles: list|None
     ) -> True:
-        if allowed_roles is None:
-            allowed_roles = ["moderator", "admin"]
+        """Checks if the user has one of the allowed roles.
+
+        This asynchronous function checks the user's role. If the user's role
+        is not in the list of allowed roles, an HTTPException with a 403 status code is raised.
+
+        Args:
+            user (User): The user object whose role needs to be checked.
+            allowed_roles: optional list of roles.
+
+        Raises:
+            HTTPException: If the user's role is not in the allowed roles,
+            a 403 Forbidden error is raised with the message "Access denied".
+
+        Returns:
+            True: Returns True if the user has one of the allowed roles.
+        """
+        if not allowed_roles:
+            allowed_roles = [RoleEnum.moderator, RoleEnum.admin]
         if user.role not in allowed_roles:
             raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

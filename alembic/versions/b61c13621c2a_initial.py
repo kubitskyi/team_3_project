@@ -1,8 +1,8 @@
-"""NewInit
+"""Initial
 
-Revision ID: 02d1713b3009
+Revision ID: b61c13621c2a
 Revises: 
-Create Date: 2024-10-05 20:56:33.900305
+Create Date: 2024-10-09 23:24:34.770245
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '02d1713b3009'
+revision: str = 'b61c13621c2a'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -37,9 +37,12 @@ def upgrade() -> None:
     sa.Column('refresh_token', sa.String(length=255), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=True),
     sa.Column('is_online', sa.Boolean(), nullable=True),
+    sa.Column('banned', sa.Boolean(), nullable=True),
     sa.Column('avatar', sa.String(length=255), nullable=True),
-    sa.Column('rate', sa.Integer(), nullable=True),
+    sa.Column('photo_count', sa.Integer(), nullable=True),
+    sa.Column('comment_count', sa.Integer(), nullable=True),
     sa.Column('role', sa.Enum('user', 'admin', 'moderator', name='roleenum'), nullable=True),
+    sa.Column('about', sa.Text(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
@@ -58,7 +61,9 @@ def upgrade() -> None:
     sa.Column('author_id', sa.Integer(), nullable=True),
     sa.Column('photo_id', sa.Integer(), nullable=True),
     sa.Column('content', sa.Text(), nullable=True),
-    sa.Column('rate', sa.Integer(), nullable=True),
+    sa.Column('rate', sa.DECIMAL(), nullable=True),
+    sa.Column('rate_sum', sa.Integer(), nullable=True),
+    sa.Column('rate_count', sa.Integer(), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('modified', sa.DateTime(), nullable=True),

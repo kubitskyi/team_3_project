@@ -49,6 +49,7 @@ class UserReturn(BaseModel):
     photo_count: int
     comment_count: int
     role: str
+    about: str | None
 
     class Config:
         """Tells pydantic to convert even non-dict objects to json."""

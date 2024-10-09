@@ -1,7 +1,54 @@
-# team_3_project
-The final project of the Python Software Engineering course from GOIT. Terms of reference for the creation of the PhotoShare application (REST API). The main functionality for the REST API is implemented on FastAPI .
+# PixnTalk v0.1.0
 
-temporary_tec_info:
+## SnakeHuntersTeam
+
+### team_3_project
+The final project of the Python Software Engineering course from GOIT.
+Terms of reference for the creation of the PhotoShare application (REST API).
+The main functionality for the REST API is implemented on FastAPI .
+
+--Description of app--
+
+##### How to run
+
+1. Start virtual environment:
+```
+python -m venv .venv
+```
+(this command may be different for different OS)
+```
+source .venv/bin/activate
+```
+(this command may be different for different OS)
+
+2. Instal dependencies:
+```
+pip install -r requirements.txt
+```
+
+3. Create file .env and write credentials as it shown in .env.exam
+
+4. In other terminal start docker compose containers:
+```
+docker compose up
+```
+
+5. Make alembic migrations:
+```
+alembic upgrade heads
+```
+
+6. Run application:
+```
+python main.py
+```
+(this command may be different for different OS)
+
+7. Swagger documentation available on address:
+http://localhost:8000/docs
+
+
+##### temporary_tec_info:
 1. Cloudinary settings are in lifespan and can be reused.
 2. get_db is in src.database.connect and can be reused.
 3. auth_service.check_access - to check RBAC:
