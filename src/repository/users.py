@@ -1,8 +1,9 @@
-"""CRUD operations"""
+"""CRUD operations with database"""
 from sqlalchemy.orm import Session
 
 from src.database.models import User
 from src.schemas.users import UserCreate
+from src.services.users import check_role
 
 
 async def get_user_by_email(email: str, db: Session) -> User:
@@ -102,9 +103,28 @@ async def update_avatar(email, url: str, db: Session) -> User:
     return user
 
 async def delete_avatar(user: User, db: Session) -> None:
+    """Asynchronously deletes the avatar associated with the given user by setting it to `None`
+    and commits the change to the database.
+
+    Args:
+        user (User): The user object whose avatar is to be deleted.
+        db (Session): The database session used to commit the changes.
+    """
     user.avatar = None
     db.commit()
 
-async def ban_offender(user: User, db: Session) -> None:
-    user.banned = True
+async def change_role(user: User, new_role: str, db: Session) -> None:
+    """Asynchronously changes the role of the given user to a new role, validates the new role,
+    and commits the change to the database.
+
+    Args:
+        user (User): The user object whose role is to be updated.
+        new_role (str): The new role to be assigned to the user.
+        db (Session): The database session used to commit the changes.
+    """
+    user.role = check_role(new_role)
+    db.commit()
+
+async def ban_unban(user: User, db: Session) -> None:
+    user.banned = not user.banned
     db.commit()

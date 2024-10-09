@@ -1,4 +1,4 @@
-"""Token operations"""
+"""Token operations, password checks, authentifisation checks"""
 from typing import Optional
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt

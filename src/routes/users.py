@@ -14,15 +14,15 @@ from src.routes.auth import get_redis
 from src.services.auth import auth_service as auth_s
 from src.schemas.users import UserReturn
 from src.repository.users import (
-    get_user_by_name, update_avatar, delete_avatar, ban_offender
+    get_user_by_name, update_avatar, delete_avatar, ban_unban, change_role
 )
 
 
-router = APIRouter(prefix='/users', tags=["Users"])
+router = APIRouter(prefix='/user', tags=["Users"])
 get_refr_token = HTTPBearer()
 
 
-@router.get("/user", response_model=UserReturn)
+@router.get("/", response_model=UserReturn)
 async def read_users_me(
     current_user: User = Depends(auth_s.get_current_user),
     redis = Depends(get_redis)
@@ -44,7 +44,7 @@ async def read_users_me(
     return current_user
 
 
-@router.patch('/user/avatar', response_model=UserReturn)
+@router.patch('/avatar', response_model=UserReturn)
 async def update_avatar_user(
     file: UploadFile = File(),
     current_user: User = Depends(auth_s.get_current_user),
@@ -83,13 +83,13 @@ async def update_avatar_user(
     return user
 
 
-@router.delete('/user/avatar', response_model=dict)
+@router.delete('/avatar', response_model=dict)
 async def delete_avatar_user(
     username: str,
     current_user: User = Depends(auth_s.get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
-    """Delete a user's avatar.
+    """Delete user's avatar.
 
     This endpoint allows the deletion of a user's avatar image. The user who owns the
     avatar or a user with specific roles (such as moderator or admin) is authorized to
@@ -118,7 +118,36 @@ async def delete_avatar_user(
         return {"message": "Avatar deleted."}
 
 
-@router.patch('/user/ban', response_model=dict)
+@router.patch('/admin/change_role', response_model=dict)
+async def change_user_role(
+    username: str,
+    new_role: str,
+    current_user: User = Depends(auth_s.get_current_user),
+    db: Session = Depends(get_db)
+) -> dict:
+    """Asynchronously changes the role of a specified user to a new role
+    if the current user has admin privileges.
+
+    Args:
+        username (str): The username of the user whose role is to be changed.
+        new_role (str): The new role to assign to the user.
+        current_user (User, optional): The currently authenticated user, used to verify admin
+            privileges. Defaults to Depends(auth_s.get_current_user).
+        db (Session, optional): The database session used for retrieving and updating the user.
+            Defaults to Depends(get_db).
+
+    Returns:
+        dict: A dictionary containing a success message indicating that the role has been changed.
+    """
+    user = await get_user_by_name(username, db)
+    check = await auth_s.check_admin(current_user, ['admin'])
+    if check:
+        await change_role(user, new_role, db)
+        return {"message": f"Role changed to {new_role}."}
+
+
+
+@router.patch('/admin/ban-unban', response_model=dict)
 async def ban_user(
     username: str,
     confirmation: bool,
@@ -146,8 +175,8 @@ async def ban_user(
     Raises:
         HTTPException: If the current user is not an admin, a 403 Forbidden error is raised.
     """
-    offender = await get_user_by_name(username, db)
+    user = await get_user_by_name(username, db)
     check = await auth_s.check_admin(current_user, ['admin'])
     if check and confirmation:
-        await ban_offender(offender, db)
-        return {"message": "Avatar deleted."}
+        await ban_unban(user, db)
+        return {"message": "User banned."}
