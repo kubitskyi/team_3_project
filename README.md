@@ -17,3 +17,6 @@ temporary_tec_info:
             return resourse
 
 get_current_user gets user from token, check_access returns True if user is owner, moderator or admin or raises exception if not.
+
+4. auth_service.check_admin - the same as check access? but gets access only to moders and admins.
+    Usage is the same.
