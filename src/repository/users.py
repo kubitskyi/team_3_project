@@ -42,8 +42,7 @@ async def create_user(body: UserCreate, db: Session) -> User:
         User: The newly created user object.
     """
     new_user = User(**body.model_dump())
-    new_user.rate = 0
-
+    # Check if this is first user
     check = db.query(User).count()
     if not check:
         new_user.role = "admin"
@@ -104,4 +103,8 @@ async def update_avatar(email, url: str, db: Session) -> User:
 
 async def delete_avatar(user: User, db: Session) -> None:
     user.avatar = None
+    db.commit()
+
+async def ban_offender(user: User, db: Session) -> None:
+    user.banned = True
     db.commit()

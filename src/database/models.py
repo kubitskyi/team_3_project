@@ -54,8 +54,10 @@ class User(Base):
     refresh_token = Column(String(255), nullable=True)
     is_active = Column(Boolean, default=False)
     is_online = Column(Boolean, default=False)
+    banned = Column(Boolean, default=False)
     avatar = Column(String(255), nullable=True)
-    rate = Column(Integer)
+    photo_count = Column(Integer, default=0)
+    comment_count = Column(Integer, default=0)
     role = Column(SQLAlchemyEnum(RoleEnum), default=RoleEnum.user)
 
 
