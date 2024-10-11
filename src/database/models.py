@@ -128,3 +128,11 @@ class Comment(Base):
     is_active = Column(Boolean, default=False)
     created_at = Column(DateTime, default=func.now())
     modified = Column(DateTime, default=func.now(), onupdate=func.now())
+
+
+class PhotoLink(Base):
+    __tablename__ = 'photo_links'
+    id = Column(Integer, primary_key=True, index=True)
+    original_url = Column(String, nullable=False)
+    transformed_url = Column(String, nullable=False)
+    qr_code_url = Column(String, nullable=False)
