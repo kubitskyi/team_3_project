@@ -11,6 +11,7 @@ from src.routes import auth
 from src.routes import users
 from src.routes import posts
 from src.routes import comments
+from src.services.cloudinary import cloudinary_config
 
 
 r = None
@@ -28,12 +29,7 @@ async def lifespan(app: FastAPI):
     Yields:
         Allows the FastAPI application to run within this context, managing resources.
     """
-    cloudinary.config(
-        cloud_name=settings.cloudinary_name,
-        api_key=settings.cloudinary_api_key,
-        api_secret=settings.cloudinary_api_secret,
-        secure=True
-    )
+    cloudinary_config
 
     global r
     r = await redis.Redis(
