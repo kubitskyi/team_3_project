@@ -10,5 +10,11 @@ class PhotoResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+class PhotoUpload(BaseModel):
+    description: str
+    image_url: str
+    tags: List[str]
+    
+
     class Config:
         from_attributes = True

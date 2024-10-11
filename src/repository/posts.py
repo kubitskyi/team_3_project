@@ -8,29 +8,12 @@ import os
 # Путь для сохранения загруженных фотографий
 UPLOAD_DIRECTORY = "uploads/photos/"
 
-def create_photo(file, description: str, tags: List[str], db: Session):
-    # Проверка существует ли директория для сохранения
-    if not os.path.exists(UPLOAD_DIRECTORY):
-        os.makedirs(UPLOAD_DIRECTORY)
-
-    # Сохранение файла на диск
-    file_path = os.path.join(UPLOAD_DIRECTORY, file.filename)
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    # Создание записи о фото в базе данных
-    photo = Photo(description=description, file_path=file_path)
-    db.add(photo)
+def create_photo(db: Session, photo_url: str, photo_data):
+    new_photo = Photo(url=photo_url, description=photo_data.description)
+    db.add(new_photo)
     db.commit()
-    db.refresh(photo)
-
-    # Добавление тегов к фото
-    for tag_name in tags:
-        tag = Tag(name=tag_name, photo_id=photo.id)
-        db.add(tag)
-
-    db.commit()
-    return photo
+    db.refresh(new_photo)
+    return new_photo
 
 
 def delete_photo(photo_id: int, db: Session):

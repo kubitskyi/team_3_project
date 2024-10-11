@@ -5,7 +5,6 @@ import cloudinary
 import redis.asyncio as redis
 from fastapi_limiter import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter
-# pylint: disable=C0103, W0613, W0621, W0603
 from src.conf.config import settings
 from src.routes import auth
 from src.routes import users
@@ -32,12 +31,7 @@ async def lifespan(app: FastAPI):
     Yields:
         Allows the FastAPI application to run within this context, managing resources.
     """
-    cloudinary.config(
-        cloud_name=settings.cloudinary_name,
-        api_key=settings.cloudinary_api_key,
-        api_secret=settings.cloudinary_api_secret,
-        secure=True
-    )
+    cloudinary_config
 
     global r
     r = await redis.Redis(

@@ -1,6 +1,6 @@
 """Models"""
 from enum import Enum
-from sqlalchemy import Table, Column, Integer, String, Text, Boolean, func, DECIMAL
+from sqlalchemy import Table, Column, Integer, String, Text, Boolean, DateTime, func, DECIMAL
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.schema import ForeignKey
@@ -70,6 +70,9 @@ class Photo(Base):
     tags = relationship('Tag', secondary=photo_tag_association, back_populates="photos")
     user_id = Column(Integer, ForeignKey('users.id'))
     user = relationship("User", back_populates="photos")
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())
+
 
 
 class Tag(Base):
@@ -121,7 +124,6 @@ class Comment(Base):
         ForeignKey('photos.id', ondelete='CASCADE'),
         default=None
     )
-
     content = Column(Text, nullable=True)
     rate = Column(DECIMAL, nullable=True)
     rate_sum = Column(Integer, default=0)
