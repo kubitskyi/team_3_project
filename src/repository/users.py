@@ -1,7 +1,7 @@
 """CRUD operations with database"""
 from sqlalchemy.orm import Session
 
-from src.database.models import User
+from src.database.models import User, RoleEnum
 from src.schemas.users import UserCreate
 from src.services.users import check_role
 
@@ -46,7 +46,7 @@ async def create_user(body: UserCreate, db: Session) -> User:
     # Check if this is first user
     check = db.query(User).count()
     if not check:
-        new_user.role = "admin"
+        new_user.role = RoleEnum.admin
 
     db.add(new_user)
     db.commit()

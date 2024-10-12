@@ -23,7 +23,22 @@ class UserCreate(BaseModel):
     password: str = Field(min_length=8, max_length=25)
 
 
-class UserReturn(BaseModel):
+class UserPublic(BaseModel):
+    name: str
+    created_at: datetime
+    is_online: bool
+    avatar: str | None
+    photo_count: int
+    comment_count: int
+    role: str
+    about: str | None
+
+    class Config:
+        """Tells pydantic to convert even non-dict objects to json."""
+        from_attributes = True
+
+
+class UserReturn(UserPublic):
     """Represents the database model for a user, used for returning user data from the database.
 
     Args:
@@ -40,20 +55,9 @@ class UserReturn(BaseModel):
             (like SQLAlchemy models) to JSON.
     """
     id: int
-    name: str
     email: EmailStr
-    created_at: datetime
     modified: datetime
-    is_online: bool
-    avatar: str | None
-    photo_count: int
-    comment_count: int
-    role: str
-    about: str | None
 
-    class Config:
-        """Tells pydantic to convert even non-dict objects to json."""
-        from_attributes = True
 
 
 class UserCreationResp(BaseModel):

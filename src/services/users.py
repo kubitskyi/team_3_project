@@ -1,3 +1,4 @@
+"""Service file for users operations"""
 from fastapi import HTTPException, status
 
 from src.database.models import RoleEnum
@@ -12,13 +13,13 @@ def check_role(role: str) -> str:
         HTTPException: If the provided role is not valid according to `RoleEnum`.
 
     Returns:
-        str: The sanitized and validated role string.
+        RoleEnum object: The role that is RoleEnum objecct.
     """
     role.strip().lower()
-    allowed_roles = [r.value for r in RoleEnum]
-    if role not in allowed_roles:
+    try:
+        return RoleEnum(role)
+    except ValueError as e:
         raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="AuthServices: Invalid role"
-            )
-    return role
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="UserServices: Invalid role"
+        ) from e

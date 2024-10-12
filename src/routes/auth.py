@@ -122,9 +122,9 @@ async def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="UserRouter: User is banned."
         )
-    access_token_ = await auth_s.create_access_token(data={"sub": user.email})
+    access_token_, exp = await auth_s.create_access_token(data={"sub": user.email})
     refresh_token_ = await auth_s.create_refresh_token(data={"sub": user.email})
-    await redis.set(f"user_token:{user.id}", access_token_, ex=900)
+    await redis.set(f"user_token:{user.id}", access_token_, ex=exp)
     await update_token(user, refresh_token_, db)
     return {
         "access_token": access_token_,
@@ -198,12 +198,12 @@ async def refresh_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="UserRouter: Invalid refresh token"
         )
-    access_token = await auth_s.create_access_token(data={"sub": email})
+    access_token_, exp = await auth_s.create_access_token(data={"sub": email})
     refresh_token_ = await auth_s.create_refresh_token(data={"sub": email})
-    await redis.set(f"user_token:{user.id}", access_token, ex=900)
+    await redis.set(f"user_token:{user.id}", access_token_, ex=exp)
     await update_token(user, refresh_token_, db)
     return {
-        "access_token": access_token,
+        "access_token": access_token_,
         "refresh_token": refresh_token_,
         "token_type": "bearer"
     }

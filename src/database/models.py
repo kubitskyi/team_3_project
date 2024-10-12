@@ -4,7 +4,6 @@ from sqlalchemy import Table, Column, Integer, String, Text, Boolean, DateTime, 
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.schema import ForeignKey
-from sqlalchemy.sql.sqltypes import DateTime
 from sqlalchemy.orm import relationship
 
 
@@ -136,5 +135,3 @@ class PhotoLink(Base):
     original_url = Column(String, nullable=False)
     transformed_url = Column(String, nullable=False)
     qr_code_url = Column(String, nullable=False)
-
-

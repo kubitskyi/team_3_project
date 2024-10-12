@@ -75,6 +75,7 @@ class Auth:
             expire = datetime.now(timezone.utc) + timedelta(seconds=exp_delta)
         else:
             expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+            exp_delta = 900
 
         to_encode.update(
             {
@@ -88,7 +89,7 @@ class Auth:
             self.SECRET_KEY,
             algorithm=self.ALGORITHM
         )
-        return encoded_access_token
+        return encoded_access_token, exp_delta
 
 
     async def create_refresh_token(self, data: dict, exp_delta: Optional[float] = None) -> str:

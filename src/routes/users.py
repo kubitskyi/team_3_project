@@ -12,7 +12,7 @@ from src.database.connect import get_db
 from src.database.models import User, RoleEnum
 from src.routes.auth import get_redis
 from src.services.auth import auth_service as auth_s
-from src.schemas.users import UserReturn
+from src.schemas.users import UserReturn, UserPublic
 from src.repository.users import (
     get_user_by_name, update_avatar, delete_avatar, ban_unban, change_role,
     update_about, delete_about
@@ -25,7 +25,7 @@ get_refr_token = HTTPBearer()
 
 @router.get(
     "/",
-    response_model=UserReturn,
+    response_model=UserPublic,
     dependencies=[Depends(RateLimiter(times=5, seconds=30))]
 )
 async def read_user(
@@ -51,26 +51,19 @@ async def read_user(
     return user
 
 
-# @router.get("/", response_model=UserReturn)
-# async def read_users_me(
-#     current_user: User = Depends(auth_s.get_current_user),
-#     redis = Depends(get_redis)
-# ) -> UserReturn:
-#     """Get the current authenticated user's details.
-
-#     This endpoint retrieves the information of the currently authenticated user.
-#     The user's details are returned in the response model format `UserReturn`.
-
-#     Args:
-#         current_user (User, optional): The current authenticated user.
-#             It is automatically injected by the `Depends(auth_s.get_current_user)` function.
-
-#     Returns:
-#         UserReturn: A model representing the authenticated user's details.
-#     """
-#     token = await redis.get(f"user_token:{current_user.id}")
-#     current_user.is_online = bool(token)
-#     return current_user
+@router.get("/profile", response_model=UserReturn)
+async def read_users_profile(
+    username: str,
+    current_user: User = Depends(auth_s.get_current_user),
+    db: Session = Depends(get_db),
+    redis = Depends(get_redis)
+) -> UserReturn:
+    owner = await get_user_by_name(username, db)
+    check = await auth_s.check_access(current_user, owner.id)
+    if check:
+        token = await redis.get(f"user_token:{owner.id}")
+        owner.is_online = bool(token)
+        return owner
 
 
 @router.patch('/avatar', response_model=UserReturn)
@@ -225,7 +218,7 @@ async def change_user_role(
         dict: A dictionary containing a success message indicating that the role has been changed.
     """
     user = await get_user_by_name(username, db)
-    check = await auth_s.check_admin(current_user, RoleEnum.admin)
+    check = await auth_s.check_admin(current_user, [RoleEnum.admin])
     if check:
         await change_role(user, new_role, db)
         return {"message": f"Role changed to {new_role}."}
@@ -261,7 +254,7 @@ async def ban_user(
         HTTPException: If the current user is not an admin, a 403 Forbidden error is raised.
     """
     user = await get_user_by_name(username, db)
-    check = await auth_s.check_admin(current_user, RoleEnum.admin)
+    check = await auth_s.check_admin(current_user, [RoleEnum.admin])
     if check and confirmation:
         await ban_unban(user, db)
         return {"message": "User banned."}
