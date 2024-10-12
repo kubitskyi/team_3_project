@@ -1,7 +1,10 @@
+import uuid
+import pathlib
+import qrcode
 import cloudinary
 from cloudinary import CloudinaryImage
+from fastapi import HTTPException
 from src.conf.config import settings
-import qrcode
 
 cloudinary_config = cloudinary.config( 
   cloud_name = settings.cloudinary_name, 
@@ -10,30 +13,28 @@ cloudinary_config = cloudinary.config(
   secure = settings.cloudinary_secure
 )
 
+def upload_file(file):
+      # Створення унікального імені для файлу
+    unique_filename = str(uuid.uuid4()) + pathlib.Path(file.filename).suffix
 
-def upload_image(image_url: str):
-    cloudinary.uploader.upload(image_url, public_id="quickstart_butterfly", unique_filename = False, overwrite=True)
-#   srcURL = CloudinaryImage("quickstart_butterfly").build_url()
-#   print("****2. Upload an image****\nDelivery URL: ", srcURL, "\n")
-    
-    # with open(image_url, 'rd') as file:
-    #     file.read()
+    # Завантаження файлу на Cloudinary
+    try:
+        upload_result = cloudinary.uploader.upload(file.file, public_id=unique_filename)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Помилка завантаження на Cloudinary: {str(e)}")
+    return upload_result['url'], upload_result['public_id']
 
-    # cloudinary.uploader.upload(file.file, public_id=f'NotesApp/{current_user.username}', overwrite=True)
-    # src_url = cloudinary.CloudinaryImage(f'NotesApp/{current_user.username}')\
-    #                     .build_url(width=250, height=250, crop='fill', version=r.get('version'))
+def transform_image(public_id):
+    """Трансформация изображения"""
+    transformed_url = cloudinary.CloudinaryImage(public_id).build_url(transformation=[
+        {'width': 500, 'height': 500, 'crop': 'fill'}
+    ])
+    return transformed_url
 
-    # return CloudinaryImage("quickstart_butterfly").build_url()
-    pass
-
-
-
-def get_url():
-    ...
-    
-def image_transformation():
-    ...
-
-def get_qrcode():
-    """Create qrcode image from url"""
-    ...
+def generate_qr_code(link: str):
+    """Генерация QR-кода для ссылки"""
+    img = qrcode.make(link)
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+    return buffer

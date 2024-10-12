@@ -1,37 +1,48 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, status
 from typing import List
-import uuid
-import pathlib
 import cloudinary
 from sqlalchemy.orm import Session
-from src.database.connect import SessionLocal
-from src.schemas.posts import PhotoResponse, PhotoUpload
+from src.database.connect import  get_db
+from src.database.models import  User, Tag
+from src.schemas.posts import PhotoResponse, PhotoCreate, PhotoUpdate
 from src.repository import posts as posts_crud
+from src.services.cloudinary import  upload_file
+from src.services.auth import auth_service
 
-router = APIRouter()
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+router = APIRouter(prefix="/posts", tags=["posts"])
 
-@router.post("/photo/", response_model=PhotoResponse)
-async def upload_photo(file: UploadFile = File(...), description: str = "No description", db: Session = Depends(get_db)):
-     # Створення унікального імені для файлу
-    unique_filename = str(uuid.uuid4()) + pathlib.Path(file.filename).suffix
 
-    # Завантаження файлу на Cloudinary
-    try:
-        upload_result = cloudinary.uploader.upload(file.file, public_id=unique_filename)
-        photo_url = upload_result["url"]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Помилка завантаження на Cloudinary: {str(e)}")
+@router.post("/photo", response_model=PhotoCreate)
+async def upload_photo(file: UploadFile = File(...), 
+                       description: str = "No description", 
+                       db: Session = Depends(get_db),
+                       tags: List[str] = [],
+                       current_user: User = Depends(auth_service.get_current_user)):
+    photo_url, _ = upload_file(file)
+    
+    print("="*30)
+    print(tags)
+    tags_list = []
+    if len(tags) > 0:
+        tags_list = tags[0].split(",")
 
-    # Збереження інформації про фото в базу даних
-    photo_data = PhotoResponse(description=description)
-    new_photo = posts_crud.create_photo(db=db, photo_url=photo_url, photo_data=photo_data)
+    if len(tags_list) > 5:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Too many tags. Available only 5 tags.")
+    
+    tags = []
+    for tag in tags_list:
+        new_tag = db.query(Tag).filter(Tag.name==tag).one_or_none()
+        if new_tag == None:
+            new_tag = Tag(name=tag)
+            db.add(new_tag)
+            db.commit()
+            print("%"*30)
+            print(new_tag.id)
+            
+        tags.append(new_tag)
+
+    new_photo = posts_crud.create_photo(db=db, photo_url=photo_url, tags=tags, description=description,current_user=current_user)
 
     return new_photo
     
@@ -40,8 +51,30 @@ async def upload_photo(file: UploadFile = File(...), description: str = "No desc
 async def delete_photo(photo_id: int, db: Session = Depends(get_db)):
     return posts_crud.delete_photo(photo_id, db)
 
-@router.put("/photo/{photo_id}", response_model=PhotoResponse)
-async def update_photo(photo_id: int, description: str, tags: List[str] = [], db: Session = Depends(get_db)):
+@router.put("/photo/{photo_id}", response_model=PhotoUpdate)
+async def update_photo(photo_id: int,
+                       description: str = "No description", 
+                       db: Session = Depends(get_db),
+                       tags: List[str] = [],
+                       current_user: User = Depends(auth_service.get_current_user)):
+    tags_list = []
+    if len(tags) > 0:
+        tags_list = tags[0].split(",")
+
+    if len(tags_list) > 5:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Too many tags. Available only 5 tags.")
+    tags = []
+    for tag in tags_list:
+        new_tag = db.query(Tag).filter(Tag.name==tag).one_or_none()
+        if new_tag == None:
+            new_tag = Tag(name=tag)
+            db.add(new_tag)
+            db.commit()
+            print("%"*30)
+            print(new_tag.id)
+            
+        tags.append(new_tag)
+
     return posts_crud.update_photo(photo_id, description, tags, db)
 
 @router.get("/photo/{photo_id}", response_model=PhotoResponse)

@@ -6,10 +6,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.sql.sqltypes import DateTime
 from sqlalchemy.orm import relationship
-# pylint: disable=E1102, C0103, R0903
 
 
 Base = declarative_base()
+
 
 photo_tag_association = Table(
     'photo_tag_association',
@@ -60,6 +60,7 @@ class User(Base):
     comment_count = Column(Integer, default=0)
     role = Column(SQLAlchemyEnum(RoleEnum), default=RoleEnum.user)
     about = Column(Text, nullable=True, default=None)
+    photos = relationship("Photo", back_populates="user")
 
 
 class Photo(Base):
@@ -67,11 +68,11 @@ class Photo(Base):
     id = Column(Integer, primary_key=True, index=True)
     image_url = Column(String, nullable=False)
     description = Column(String, nullable=True)
-    tags = relationship('Tag', secondary=photo_tag_association, back_populates="photos")
-    user_id = Column(Integer, ForeignKey('users.id'))
+    user_id = Column(ForeignKey('users.id', ondelete='CASCADE'),default=None)
     user = relationship("User", back_populates="photos")
     created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(DateTime, onupdate=func.now())
+    updated_at = Column(DateTime, onupdate=func.now(), nullable=True)
+    tags = relationship('Tag', secondary=photo_tag_association, back_populates="photos")
 
 
 
@@ -80,10 +81,6 @@ class Tag(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
     photos = relationship('Photo', secondary=photo_tag_association, back_populates="tags")
-
-    User.photos = relationship('Photo', back_populates='user')
-    # author = relationship("User", backref="tags")
-    # post = relationship('Post', backref="comments")
 
 
 class Comment(Base):
@@ -139,3 +136,5 @@ class PhotoLink(Base):
     original_url = Column(String, nullable=False)
     transformed_url = Column(String, nullable=False)
     qr_code_url = Column(String, nullable=False)
+
+
