@@ -8,7 +8,7 @@ from src.database.connect import get_db
 from src.services.auth import auth_service as auth_s
 
 
-router = APIRouter(prefix="/comments", tags=["comments"])
+router = APIRouter(prefix="/comments", tags=["Comments"])
 
 
 @router.post("/", response_model=CommentResponse)
@@ -38,7 +38,7 @@ def delete_existing_comment(
     current_user: User = Depends(auth_s.get_current_user)
 ):
     if current_user.role not in ["admin", "moderator"]:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You must be admin or moder for delete this") 
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You must be admin or moder for delete this")
     return delete_comment(db, comment_id=comment_id)
 
 

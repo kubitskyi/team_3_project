@@ -69,7 +69,19 @@ async def lifespan(app: FastAPI):
     await r.close()
 
 
-app = FastAPI(title="PixnTalk", lifespan=lifespan)
+app = FastAPI(
+    title="PixnTalk",
+    lifespan=lifespan,
+    description="PixnTalk is a social networking platform designed to enhance user interaction \
+        and engagement through dynamic features. Users can create accounts, manage their profiles, \
+        and participate in discussions via posts and comments. The app allows users to upload \
+        and save profile photos to Cloudinary, ensuring efficient storage and retrieval. \
+        Additionally, PixnTalk includes a photo rating system, enabling users to rate and \
+        appreciate each other's uploads. With robust role-based access controls and a focus on \
+        community moderation, PixnTalk fosters a secure and vibrant environment for users to \
+        connect and share. Built on FastAPI, the application offers high performance and \
+        responsiveness, while Redis is utilized for effective rate limiting and data management."
+)
 
 app.include_router(auth.router, prefix='/api')
 app.include_router(users.router, prefix='/api')
@@ -77,7 +89,7 @@ app.include_router(posts.router, prefix='/api')
 app.include_router(comments.router, prefix='/api')
 
 
-@app.get("/", dependencies=[Depends(RateLimiter(times=5, seconds=30))])
+@app.get("/", tags=['Helthcheck'], dependencies=[Depends(RateLimiter(times=5, seconds=30))])
 def read_root():
     """Healthchecker"""
     return {"message": "PixnTalk API is alive"}
