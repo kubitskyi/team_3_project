@@ -15,7 +15,7 @@ from src.services.auth import auth_service as auth_s
 from src.schemas.users import UserReturn, UserPublic
 from src.repository.users import (
     get_user_by_name, update_avatar, delete_avatar, ban_unban, change_role,
-    update_about, delete_about
+    update_about, delete_about, count_admins
 )
 
 
@@ -28,23 +28,12 @@ get_refr_token = HTTPBearer()
     response_model=UserPublic,
     dependencies=[Depends(RateLimiter(times=5, seconds=30))]
 )
-async def read_user(
+async def read_user_public(
     username: str,
     db: Session = Depends(get_db),
     redis = Depends(get_redis)
 ) -> UserReturn:
-    """Get the current authenticated user's details.
 
-    This endpoint retrieves the information of the currently authenticated user.
-    The user's details are returned in the response model format `UserReturn`.
-
-    Args:
-        current_user (User, optional): The current authenticated user.
-            It is automatically injected by the `Depends(auth_s.get_current_user)` function.
-
-    Returns:
-        UserReturn: A model representing the authenticated user's details.
-    """
     user = await get_user_by_name(username, db)
     token = await redis.get(f"user_token:{user.id}")
     user.is_online = bool(token)
@@ -52,7 +41,7 @@ async def read_user(
 
 
 @router.get("/profile", response_model=UserReturn)
-async def read_users_profile(
+async def read_user_profile(
     username: str,
     current_user: User = Depends(auth_s.get_current_user),
     db: Session = Depends(get_db),
@@ -220,8 +209,13 @@ async def change_user_role(
     user = await get_user_by_name(username, db)
     check = await auth_s.check_admin(current_user, [RoleEnum.admin])
     if check:
-        await change_role(user, new_role, db)
-        return {"message": f"Role changed to {new_role}."}
+        if current_user.id == user.id:
+            doublecheck = await count_admins(db)
+            if doublecheck < 2:
+                return {"message": "Role can't be changed. You are last Admin."}
+            else:
+                await change_role(user, new_role, db)
+                return {"message": f"Role changed to {new_role}."}
 
 
 
@@ -256,5 +250,8 @@ async def ban_user(
     user = await get_user_by_name(username, db)
     check = await auth_s.check_admin(current_user, [RoleEnum.admin])
     if check and confirmation:
-        await ban_unban(user, db)
-        return {"message": "User banned."}
+        if current_user.id == user.id:
+            return {"message": "You are trying to ban yourself."}
+        else:
+            await ban_unban(user, db)
+            return {"message": "User banned."}

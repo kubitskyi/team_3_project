@@ -4,7 +4,7 @@ from fastapi_limiter.depends import RateLimiter
 from fastapi import APIRouter, HTTPException, Depends, status, Security, BackgroundTasks, Request
 from fastapi.security import OAuth2PasswordRequestForm, HTTPAuthorizationCredentials, HTTPBearer
 
-from src.database.connect import get_db
+from src.database.connect import get_db, get_redis
 from src.database.models import User
 from src.services.mail import send_email
 from src.services.auth import auth_service as auth_s
@@ -16,9 +16,6 @@ from src.repository.users import (
 
 router = APIRouter(prefix='/auth', tags=["Authentification"])
 get_refr_token = HTTPBearer()
-
-def get_redis(request: Request):
-    return request.app.state.redis
 
 
 @router.post(

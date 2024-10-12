@@ -8,6 +8,7 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from src.conf.config import settings
+from src.database.connect import get_redis
 from src.database.connect import get_db
 from src.repository.users import get_user_by_email
 from src.database.models import User, RoleEnum
@@ -191,7 +192,8 @@ class Auth:
     async def get_current_user(
         self,
         token: str = Depends(oauth2_scheme),
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        redis = Depends(get_redis)
     ) -> User:
         """Retrieve the current authenticated user based on the provided access token.
 
@@ -211,7 +213,6 @@ class Auth:
             detail="AuthServices: Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
         try:
             payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
 
@@ -227,10 +228,13 @@ class Auth:
         except JWTError as e:
             print(f"JWT Error in AuthServices: {e}")
             raise credentials_exception from e
-
+        # Check user in base
         user = await get_user_by_email(email, db)
-
         if user is None:
+            raise credentials_exception
+        # Check user in white list
+        token = await redis.get(f"user_token:{user.id}")
+        if token is None:
             raise credentials_exception
 
         return user
@@ -251,7 +255,6 @@ class Auth:
         try:
             payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
             email = payload["sub"]
-
             return email
 
         except JWTError as e:

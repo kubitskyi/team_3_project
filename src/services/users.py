@@ -3,7 +3,7 @@ from fastapi import HTTPException, status
 
 from src.database.models import RoleEnum
 
-def check_role(role: str) -> str:
+def validate_role(role: str) -> str:
     """Validates the provided role against the allowed roles defined in `RoleEnum`.
 
     Args:

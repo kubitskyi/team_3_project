@@ -1,6 +1,7 @@
 """Connecting to PostgreSQL"""
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from fastapi import Request
 from src.conf.config import settings
 from src.database.models import Base
 
@@ -20,6 +21,9 @@ def get_db():
     finally:
         db.close()
 
+def get_redis(request: Request):
+    """Redis init from request"""
+    return request.app.state.redis
 
 if __name__=="__main__":
     try:

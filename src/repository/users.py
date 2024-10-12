@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from src.database.models import User, RoleEnum
 from src.schemas.users import UserCreate
-from src.services.users import check_role
+from src.services.users import validate_role
 
 
 async def get_user_by_email(email: str, db: Session) -> User:
@@ -155,9 +155,12 @@ async def change_role(user: User, new_role: str, db: Session) -> None:
         new_role (str): The new role to be assigned to the user.
         db (Session): The database session used to commit the changes.
     """
-    user.role = check_role(new_role)
+    user.role = validate_role(new_role)
     db.commit()
 
 async def ban_unban(user: User, db: Session) -> None:
     user.banned = not user.banned
     db.commit()
+
+async def count_admins(db: Session) -> int:
+    return db.query(User).filter(User.role == RoleEnum.admin).count()
