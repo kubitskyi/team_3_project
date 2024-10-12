@@ -203,7 +203,8 @@ class Auth:
             db (Session, optional): The database session. Defaults to Depends(get_db).
 
         Raises:
-            HTTPException: If the token is invalid, expired, or the user cannot be found.
+            HTTPException: If the token is invalid, expired, the user cannot be found or is
+                not in whitelist (redis base).
 
         Returns:
             User: The user object associated with the token.
@@ -232,7 +233,7 @@ class Auth:
         user = await get_user_by_email(email, db)
         if user is None:
             raise credentials_exception
-        # Check user in white list
+        # Check user in whitelist
         token = await redis.get(f"user_token:{user.id}")
         if token is None:
             raise credentials_exception
@@ -241,16 +242,17 @@ class Auth:
 
 
     async def get_email_from_token(self, token: str):
-        """_summary_
+        """Decodes the provided JWT token to extract the user's email address.
 
         Args:
-            token (str): _description_
+            token (str): The JWT token containing the email address in its payload.
 
         Raises:
-            HTTPException: _description_
+            HTTPException: If the token is invalid or cannot be decoded, an HTTP 422 Unprocessable
+                Entity exception is raised with a message indicating the failure.
 
         Returns:
-            _type_: _description_
+            str: The email address extracted from the token.
         """
         try:
             payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])

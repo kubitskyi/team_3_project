@@ -1,17 +1,14 @@
 """Router for work with users"""
-import cloudinary
-import cloudinary.uploader
 from sqlalchemy.orm import Session
 from fastapi_limiter.depends import RateLimiter
 from fastapi.security import HTTPBearer
-from fastapi import (
-    APIRouter, Depends, UploadFile, File
-)
+from fastapi import APIRouter, Depends, UploadFile, File
 
 from src.database.connect import get_db
 from src.database.models import User, RoleEnum
 from src.routes.auth import get_redis
 from src.services.auth import auth_service as auth_s
+from src.services.users import upload_avatar, remove_avatar
 from src.schemas.users import UserReturn, UserPublic
 from src.repository.users import (
     get_user_by_name, update_avatar, delete_avatar, ban_unban, change_role,
@@ -33,7 +30,20 @@ async def read_user_public(
     db: Session = Depends(get_db),
     redis = Depends(get_redis)
 ) -> UserReturn:
+    """Retrieves public information about a user, including their online status,
+    and returns the user's public profile.
 
+    Args:
+        username (str): The username of the user whose public information is to be retrieved.
+        db (Session, optional): The database session used to query user data.
+            Defaults to Depends(get_db).
+        redis (_type_, optional): Redis instance used to check if the user is online.
+            Defaults to Depends(get_redis).
+
+    Returns:
+        UserReturn: A user object containing public profile information, including
+            the online status.
+    """
     user = await get_user_by_name(username, db)
     token = await redis.get(f"user_token:{user.id}")
     user.is_online = bool(token)
@@ -47,6 +57,21 @@ async def read_user_profile(
     db: Session = Depends(get_db),
     redis = Depends(get_redis)
 ) -> UserReturn:
+    """Retrieves the profile of a specified user if the current user has access rights and returns
+    the user's full profile, including their online status.
+
+    Args:
+        username (str): The username of the user whose profile is to be retrieved.
+        current_user (User, optional): The currently authenticated user, used to check access
+            rights. Defaults to Depends(auth_s.get_current_user).
+        db (Session, optional): The database session used to query user data. Defaults to
+            Depends(get_db).
+        redis (_type_, optional): Redis instance used to check if the user is online. Defaults to
+            Depends(get_redis).
+
+    Returns:
+        UserReturn: The full profile of the user, including whether they are online.
+    """
     owner = await get_user_by_name(username, db)
     check = await auth_s.check_access(current_user, owner.id)
     if check:
@@ -77,19 +102,7 @@ async def update_avatar_user(
     Returns:
         UserReturn: The updated user profile with the new avatar URL.
     """
-    r = cloudinary.uploader.upload(
-        file.file,
-        public_id=f'PixnTalk/{current_user.name}',
-        overwrite=True
-    )
-    src_url = cloudinary.CloudinaryImage(
-        f'PixnTalk/{current_user.name}'
-    ).build_url(
-        width=250,
-        height=250,
-        crop='fill',
-        version=r.get('version')
-    )
+    src_url = await upload_avatar(current_user, file)
     user = await update_avatar(current_user, src_url, db)
     return user
 
@@ -151,6 +164,7 @@ async def delete_avatar_user(
     owner = await get_user_by_name(username, db)
     check = await auth_s.check_access(current_user, owner.id)
     if check:
+        await remove_avatar(owner)
         await delete_avatar(owner, db)
         return {"message": "Avatar deleted."}
 
@@ -195,6 +209,9 @@ async def change_user_role(
     """Asynchronously changes the role of a specified user to a new role
     if the current user has admin privileges.
 
+    If the current user is attempting to change their own role and is the last remaining admin,
+    the role change is prevented.
+
     Args:
         username (str): The username of the user whose role is to be changed.
         new_role (str): The new role to assign to the user.
@@ -204,7 +221,11 @@ async def change_user_role(
             Defaults to Depends(get_db).
 
     Returns:
-        dict: A dictionary containing a success message indicating that the role has been changed.
+        dict: A dictionary containing a success message indicating that the role has been changed,
+            or an error message if the role change was prevented.
+
+    Raises:
+        HTTPException: If the current user is not an admin, a 403 Forbidden error is raised.
     """
     user = await get_user_by_name(username, db)
     check = await auth_s.check_admin(current_user, [RoleEnum.admin])
@@ -226,26 +247,28 @@ async def ban_user(
     current_user: User = Depends(auth_s.get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
-    """Ban a user from the system.
+    """Ban or unban a user from the system.
 
-    This endpoint allows an admin user to ban another user by their username. If the
-    `confirmation` flag is set to `True`, the target user is banned, and their access
-    to the platform is revoked. Only users with the role 'admin' are authorized to perform
-    this action.
+    This endpoint allows an admin user to ban or unban another user by their username.
+    If the `confirmation` flag is set to `True`, the target user is banned, and their
+    access to the platform is revoked. If set to `False`, the user is unbanned.
+    Only users with the role 'admin' are authorized to perform this action.
 
     Args:
-        username (str): The username of the user to be banned.
-        confirmation (bool): A confirmation flag indicating whether the ban should be applied.
+        username (str): The username of the user to be banned or unbanned.
+        confirmation (bool): A flag indicating whether the ban should be applied (`True` to ban,
+            `False` to unban).
         current_user (User, optional): The currently authenticated user, injected via
             `Depends(auth_s.get_current_user)`.
-        db (Session, optional): The database session used to perform operations
-            on the user's account. Injected via `Depends(get_db)`.
+        db (Session, optional): The database session used to perform operations on the user's
+            account. Injected via `Depends(get_db)`.
 
     Returns:
-        dict: A confirmation message indicating the user has been successfully banned.
+        dict: A message confirming whether the user has been successfully banned or unbanned.
 
     Raises:
         HTTPException: If the current user is not an admin, a 403 Forbidden error is raised.
+            A message is also returned if the current user attempts to ban themselves.
     """
     user = await get_user_by_name(username, db)
     check = await auth_s.check_admin(current_user, [RoleEnum.admin])

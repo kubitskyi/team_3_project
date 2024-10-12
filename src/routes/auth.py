@@ -222,7 +222,8 @@ async def confirmed_email(token: str, db: Session = Depends(get_db)) -> dict:
         db (Session, optional): The database session dependency. Defaults to Depends(get_db).
 
     Raises:
-        HTTPException: Raised with a 400 status code if the user is not found or if the token is invalid.
+        HTTPException: Raised with a 400 status code if the user is not found or if the token
+            is invalid.
 
     Returns:
         dict: A dictionary containing a confirmation message. The message is either:

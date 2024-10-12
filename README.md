@@ -23,7 +23,7 @@ source .venv/bin/activate
 
 2. Instal dependencies:
 ```
-pip install -r requirements.txt
+poetry install
 ```
 
 3. Create file .env and write credentials as it shown in .env.exam

@@ -159,8 +159,23 @@ async def change_role(user: User, new_role: str, db: Session) -> None:
     db.commit()
 
 async def ban_unban(user: User, db: Session) -> None:
+    """Toggles the banned status of the given user. If the user is currently banned,
+    they will be unbanned, and if they are not banned, they will be banned.
+
+    Args:
+        user (User): The user object whose banned status is to be toggled.
+        db (Session): The database session used to commit the changes.
+    """
     user.banned = not user.banned
     db.commit()
 
 async def count_admins(db: Session) -> int:
+    """Counts the number of users with the 'admin' role in the database.
+
+    Args:
+        db (Session): The database session used to query the user table.
+
+    Returns:
+        int: The number of users with the 'admin' role.
+    """
     return db.query(User).filter(User.role == RoleEnum.admin).count()
