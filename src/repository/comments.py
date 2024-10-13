@@ -38,19 +38,17 @@ def get_comments_by_photo(db: Session, photo_id: int):
     return db.query(Comment).filter(Comment.photo_id == photo_id).all()
 
 
-def rate_comment(db: Session, comment_id: int, rate: int):
-    db_comment = db.query(Comment).filter(Comment.id == comment_id).first()
-    if not db_comment:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
+# def rate_comment(db: Session, comment_id: int, rate: int):
+#     db_comment = db.query(Comment).filter(Comment.id == comment_id).first()
+#     if not db_comment:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
     
-    if db_comment:
-        print("="*25)
-        print(type(rate))
-        db_comment.rate_sum += rate.rate
-        db_comment.rate_count += 1
-        db_comment.rate = db_comment.rate_sum / db_comment.rate_count
+#     if db_comment:
+#         db_comment.rate_sum += rate.rate
+#         db_comment.rate_count += 1
+#         db_comment.rate = db_comment.rate_sum / db_comment.rate_count
 
-        db.commit()
-        db.refresh(db_comment)
+#         db.commit()
+#         db.refresh(db_comment)
 
-    return db_comment
+#     return db_comment

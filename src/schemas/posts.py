@@ -19,6 +19,7 @@ class PhotoResponse(PhotoBase):
     image_url: str
     user_id: int
     tags: List[str]
+    average_rating: float
     created_at: datetime
     updated_at: datetime
 

@@ -6,7 +6,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from src.services.cloudinary import delete_image
-from src.database.models import Photo, Tag, User
+from src.database.models import Photo, User, PhotoRating
 from src.schemas.posts import PhotoResponse, PhotoUpdate
 
 
@@ -38,6 +38,7 @@ def create_photo(db: Session,
         description=new_photo.description,
         image_url=new_photo.image_url,
         user_id=new_photo.user_id,
+        average_rating=new_photo.average_rating,
         tags=[tag.name for tag in new_photo.tags],  # Якщо tag — це об'єкт, повертаємо його name
         created_at=new_photo.created_at,
         updated_at=new_photo.updated_at
@@ -102,8 +103,38 @@ def get_photo(photo_id: int, db: Session):
         description=photo.description,
         image_url=photo.image_url,
         user_id=photo.user_id,
+        average_rating=photo.average_rating,
         tags=[tag.name for tag in photo.tags],  # Якщо tag — це об'єкт, повертаємо його name
         created_at=photo.created_at,
         updated_at=photo.updated_at
     )
     return response_data
+
+def add_rate(user, photo_id, rate, db: Session):
+    # Додавання нового рейтингу для фото
+    db_rating = db.query(PhotoRating).filter(PhotoRating.user_id==user.id, PhotoRating.photo_id==photo_id).first()
+    print(db_rating)
+    if db_rating:
+        print(f"Rate:{rate}")
+        db_rating.rating=rate
+    else:
+        db_rating = PhotoRating(user_id=user.id, photo_id=photo_id, rating=rate)  # user_id не враховуємо
+    db.add(db_rating)
+    db.commit()
+    db.refresh(db_rating)
+
+    # Оновлення середнього рейтингу
+    update_photo_average_rating(photo_id, db)
+    return {"message": "Рейтинг для фото додано"} 
+
+
+def update_photo_average_rating(photo_id: int, db: Session):
+    ratings = db.query(PhotoRating).filter_by(photo_id=photo_id).all()
+    if ratings:
+        average = sum(rating.rating for rating in ratings) / len(ratings)
+    else:
+        average = 0
+
+    photo = db.query(Photo).filter(Photo.id == photo_id).first()
+    photo.average_rating = average
+    db.commit()

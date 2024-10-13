@@ -1,6 +1,6 @@
 """Models"""
 from enum import Enum
-from sqlalchemy import Table, Column, Integer, String, Text, Boolean, DateTime, func, DECIMAL
+from sqlalchemy import Table, Column, Integer, String, Text, Boolean, DateTime, func, DECIMAL, Float
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.schema import ForeignKey
@@ -60,8 +60,8 @@ class User(Base):
     role = Column(SQLAlchemyEnum(RoleEnum), default=RoleEnum.user)
     about = Column(Text, nullable=True, default=None)
     photos = relationship("Photo", back_populates="user")
-
-
+    
+    
 class Photo(Base):
     __tablename__ = 'photos'
     id = Column(Integer, primary_key=True, index=True)
@@ -73,7 +73,9 @@ class Photo(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now(), nullable=True)
     tags = relationship('Tag', secondary=photo_tag_association, back_populates="photos")
-
+    average_rating = Column(Float, default=0)
+    ratings = relationship('PhotoRating', back_populates='photo', cascade="all, delete")
+    photo_ratings = relationship('PhotoRating', back_populates='user', cascade="all, delete")
 
 
 class Tag(Base):
@@ -111,25 +113,24 @@ class Comment(Base):
         new_comment = Comment(author_id=1, post_id=2, content="Great post!", rate=5)
     """
     __tablename__ = 'comments'
-
     id = Column(Integer, primary_key=True)
-    author_id = Column(
-        ForeignKey('users.id', ondelete='CASCADE'),
-        default=None
-    )
-    photo_id = Column(
-        ForeignKey('photos.id', ondelete='CASCADE'),
-        default=None
-    )
+    author_id = Column(ForeignKey('users.id', ondelete='CASCADE'), default=None)
+    photo_id = Column(ForeignKey('photos.id', ondelete='CASCADE'), default=None)
     content = Column(Text, nullable=True)
-    rate = Column(DECIMAL, nullable=True)
-    rate_sum = Column(Integer, default=0)
-    rate_count = Column(Integer, default=0)
     is_active = Column(Boolean, default=False)
     created_at = Column(DateTime, default=func.now())
-    modified = Column(DateTime, default=func.now(), onupdate=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
 
+class PhotoRating(Base):
+    __tablename__ = 'photo_ratings'
+    user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+    photo_id = Column(Integer, ForeignKey('photos.id'), primary_key=True)
+    rating = Column(Integer, nullable=False)  # Рейтинг від 1 до 5
+    user = relationship('User', back_populates='photo_ratings')
+    photo = relationship('Photo', back_populates='ratings')
+
+    
 class PhotoLink(Base):
     __tablename__ = 'photo_links'
     id = Column(Integer, primary_key=True, index=True)
