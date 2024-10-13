@@ -5,7 +5,7 @@ from src.database.connect import  get_db
 from src.database.models import  User, Tag, Photo
 from src.schemas.posts import PhotoResponse, PhotoCreate, PhotoUpdate
 from src.repository import posts as posts_crud
-from src.services.cloudinary import  upload_file
+from services.photo_service import  upload_file
 from src.services.auth import auth_service
 
 

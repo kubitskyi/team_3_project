@@ -5,7 +5,7 @@ from typing import List
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from src.services.cloudinary import delete_image
+from services.photo_service import delete_image
 from src.database.models import Photo, User, PhotoRating
 from src.schemas.posts import PhotoResponse, PhotoUpdate
 
