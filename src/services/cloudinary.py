@@ -2,7 +2,7 @@ import uuid
 import pathlib
 import qrcode
 import cloudinary
-from cloudinary import CloudinaryImage
+import cloudinary.uploader
 from fastapi import HTTPException
 from src.conf.config import settings
 
@@ -14,7 +14,7 @@ cloudinary_config = cloudinary.config(
 )
 
 def upload_file(file):
-      # Створення унікального імені для файлу
+     # Створення унікального імені для файлу
     unique_filename = str(uuid.uuid4()) + pathlib.Path(file.filename).suffix
 
     # Завантаження файлу на Cloudinary
@@ -23,6 +23,14 @@ def upload_file(file):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Помилка завантаження на Cloudinary: {str(e)}")
     return upload_result['url'], upload_result['public_id']
+
+def delete_image(public_id):
+    """Видаляє фото вертає True/false """
+    response = cloudinary.uploader.destroy(public_id)
+    if response["result"] == "ok":
+        return True
+    return False
+
 
 def transform_image(public_id):
     """Трансформация изображения"""
