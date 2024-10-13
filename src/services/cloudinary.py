@@ -39,10 +39,12 @@ def transform_image(public_id):
     ])
     return transformed_url
 
-def generate_qr_code(link: str):
-    """Генерация QR-кода для ссылки"""
-    img = qrcode.make(link)
-    buffer = BytesIO()
-    img.save(buffer, format="PNG")
-    buffer.seek(0)
-    return buffer
+
+# TO DO ->
+# def generate_qr_code(link: str):
+#     """Генерация QR-кода для ссылки"""
+#     img = qrcode.make(link)
+#     buffer = BytesIO()
+#     img.save(buffer, format="PNG")
+#     buffer.seek(0)
+#     return buffer

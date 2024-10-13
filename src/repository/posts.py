@@ -53,14 +53,13 @@ def delete_photo(photo_id: int, db: Session):
         raise HTTPException(status_code=404, detail="Фото не найдено")
         
     try:
-        response = cloudinary.api.resource(photo.public_id)
-        print("Image exists:", response)
+        result = delete_image(photo.public_id)
+    except cloudinary.exceptions.NotFound as e:
+        print(e)
+    if result:
         db.query(Photo).filter(Photo.id == photo.id).delete()
         db.delete(photo)
         db.commit()
-    except cloudinary.exceptions.NotFound:
-        print("Image does not exist")
-
     return {"message": "Фото удалено"}
 
 

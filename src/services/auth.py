@@ -301,7 +301,7 @@ class Auth:
     async def check_admin(
         self,
         user: User,
-        allowed_roles: list|None
+        allowed_roles: list|None = None
     ) -> True:
         """Checks if the user has one of the allowed roles.
 
