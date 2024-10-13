@@ -8,6 +8,7 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from src.conf.config import settings
+from src.database.connect import get_redis
 from src.database.connect import get_db
 from src.repository.users import get_user_by_email
 from src.database.models import User, RoleEnum
@@ -75,6 +76,7 @@ class Auth:
             expire = datetime.now(timezone.utc) + timedelta(seconds=exp_delta)
         else:
             expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+            exp_delta = 900
 
         to_encode.update(
             {
@@ -88,7 +90,7 @@ class Auth:
             self.SECRET_KEY,
             algorithm=self.ALGORITHM
         )
-        return encoded_access_token
+        return encoded_access_token, exp_delta
 
 
     async def create_refresh_token(self, data: dict, exp_delta: Optional[float] = None) -> str:
@@ -190,7 +192,8 @@ class Auth:
     async def get_current_user(
         self,
         token: str = Depends(oauth2_scheme),
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        redis = Depends(get_redis)
     ) -> User:
         """Retrieve the current authenticated user based on the provided access token.
 
@@ -200,7 +203,8 @@ class Auth:
             db (Session, optional): The database session. Defaults to Depends(get_db).
 
         Raises:
-            HTTPException: If the token is invalid, expired, or the user cannot be found.
+            HTTPException: If the token is invalid, expired, the user cannot be found or is
+                not in whitelist (redis base).
 
         Returns:
             User: The user object associated with the token.
@@ -210,7 +214,6 @@ class Auth:
             detail="AuthServices: Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
         try:
             payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
 
@@ -226,31 +229,34 @@ class Auth:
         except JWTError as e:
             print(f"JWT Error in AuthServices: {e}")
             raise credentials_exception from e
-
+        # Check user in base
         user = await get_user_by_email(email, db)
-
         if user is None:
+            raise credentials_exception
+        # Check user in whitelist
+        token = await redis.get(f"user_token:{user.id}")
+        if token is None:
             raise credentials_exception
 
         return user
 
 
     async def get_email_from_token(self, token: str):
-        """_summary_
+        """Decodes the provided JWT token to extract the user's email address.
 
         Args:
-            token (str): _description_
+            token (str): The JWT token containing the email address in its payload.
 
         Raises:
-            HTTPException: _description_
+            HTTPException: If the token is invalid or cannot be decoded, an HTTP 422 Unprocessable
+                Entity exception is raised with a message indicating the failure.
 
         Returns:
-            _type_: _description_
+            str: The email address extracted from the token.
         """
         try:
             payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
             email = payload["sub"]
-
             return email
 
         except JWTError as e:

@@ -1,9 +1,9 @@
 """CRUD operations with database"""
 from sqlalchemy.orm import Session
 
-from src.database.models import User
+from src.database.models import User, RoleEnum
 from src.schemas.users import UserCreate
-from src.services.users import check_role
+from src.services.users import validate_role
 
 
 async def get_user_by_email(email: str, db: Session) -> User:
@@ -46,7 +46,7 @@ async def create_user(body: UserCreate, db: Session) -> User:
     # Check if this is first user
     check = db.query(User).count()
     if not check:
-        new_user.role = "admin"
+        new_user.role = RoleEnum.admin
 
     db.add(new_user)
     db.commit()
@@ -155,9 +155,27 @@ async def change_role(user: User, new_role: str, db: Session) -> None:
         new_role (str): The new role to be assigned to the user.
         db (Session): The database session used to commit the changes.
     """
-    user.role = check_role(new_role)
+    user.role = validate_role(new_role)
     db.commit()
 
 async def ban_unban(user: User, db: Session) -> None:
+    """Toggles the banned status of the given user. If the user is currently banned,
+    they will be unbanned, and if they are not banned, they will be banned.
+
+    Args:
+        user (User): The user object whose banned status is to be toggled.
+        db (Session): The database session used to commit the changes.
+    """
     user.banned = not user.banned
     db.commit()
+
+async def count_admins(db: Session) -> int:
+    """Counts the number of users with the 'admin' role in the database.
+
+    Args:
+        db (Session): The database session used to query the user table.
+
+    Returns:
+        int: The number of users with the 'admin' role.
+    """
+    return db.query(User).filter(User.role == RoleEnum.admin).count()

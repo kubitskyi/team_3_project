@@ -4,7 +4,7 @@ from fastapi_limiter.depends import RateLimiter
 from fastapi import APIRouter, HTTPException, Depends, status, Security, BackgroundTasks, Request
 from fastapi.security import OAuth2PasswordRequestForm, HTTPAuthorizationCredentials, HTTPBearer
 
-from src.database.connect import get_db
+from src.database.connect import get_db, get_redis
 from src.database.models import User
 from src.services.mail import send_email
 from src.services.auth import auth_service as auth_s
@@ -16,9 +16,6 @@ from src.repository.users import (
 
 router = APIRouter(prefix='/auth', tags=["Authentification"])
 get_refr_token = HTTPBearer()
-
-def get_redis(request: Request):
-    return request.app.state.redis
 
 
 @router.post(
@@ -122,9 +119,9 @@ async def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="UserRouter: User is banned."
         )
-    access_token_ = await auth_s.create_access_token(data={"sub": user.email})
+    access_token_, exp = await auth_s.create_access_token(data={"sub": user.email})
     refresh_token_ = await auth_s.create_refresh_token(data={"sub": user.email})
-    await redis.set(f"user_token:{user.id}", access_token_, ex=900)
+    await redis.set(f"user_token:{user.id}", access_token_, ex=exp)
     await update_token(user, refresh_token_, db)
     return {
         "access_token": access_token_,
@@ -198,12 +195,12 @@ async def refresh_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="UserRouter: Invalid refresh token"
         )
-    access_token = await auth_s.create_access_token(data={"sub": email})
+    access_token_, exp = await auth_s.create_access_token(data={"sub": email})
     refresh_token_ = await auth_s.create_refresh_token(data={"sub": email})
-    await redis.set(f"user_token:{user.id}", access_token, ex=900)
+    await redis.set(f"user_token:{user.id}", access_token_, ex=exp)
     await update_token(user, refresh_token_, db)
     return {
-        "access_token": access_token,
+        "access_token": access_token_,
         "refresh_token": refresh_token_,
         "token_type": "bearer"
     }
@@ -225,7 +222,8 @@ async def confirmed_email(token: str, db: Session = Depends(get_db)) -> dict:
         db (Session, optional): The database session dependency. Defaults to Depends(get_db).
 
     Raises:
-        HTTPException: Raised with a 400 status code if the user is not found or if the token is invalid.
+        HTTPException: Raised with a 400 status code if the user is not found or if the token
+            is invalid.
 
     Returns:
         dict: A dictionary containing a confirmation message. The message is either:
