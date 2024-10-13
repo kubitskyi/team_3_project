@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 
 class PhotoBase(BaseModel):
@@ -11,7 +11,7 @@ class PhotoBase(BaseModel):
         from_attributes = True
     
 class PhotoCreate(PhotoBase):
-    id: int
+    pass
 
 class PhotoResponse(PhotoBase):
     id: int
@@ -24,4 +24,4 @@ class PhotoResponse(PhotoBase):
     updated_at: datetime
 
 class PhotoUpdate(PhotoBase):
-    pass
+    id: int

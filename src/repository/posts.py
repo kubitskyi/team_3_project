@@ -6,10 +6,8 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from src.services.cloudinary import delete_image
-from src.database.models import Photo, User, PhotoRating
-from src.schemas.posts import PhotoResponse, PhotoUpdate
-
-
+from src.database.models import Photo, User, PhotoRating, Tag
+from src.schemas.posts import PhotoResponse
 
 
 def create_photo(db: Session, 
@@ -76,14 +74,13 @@ def update_photo(photo_id: int, description: str, tags: List[str], db: Session):
     photo.tags = tags
     
     # Обновление тегов
-    # db.query(Tag).filter(Tag.photo_id == photo_id).delete()  # Удаляем старые теги
-    # for tag_name in tags:
-    #     tag = Tag(name=tag_name, photo_id=photo_id)
-    #     db.add(tag)
+    db.query(Tag).filter(Tag.photo_id == photo_id).delete()  # Удаляем старые теги
+    for tag_name in tags:
+        tag = Tag(name=tag_name, photo_id=photo_id)
+        db.add(tag)
 
     db.commit()
-    # response_data = {**photo}
-    # response_data['tags'] = [tag.name for tag in photo.tags]
+    
     response_data =  {
         "description": photo.description,
         "image_url": photo.image_url,
