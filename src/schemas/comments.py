@@ -20,11 +20,7 @@ class CommentResponse(CommentBase):
     author_id: int
     photo_id: int
     created_at: datetime
-    modified: datetime
+    updated_at: datetime
     
     class Config:
         from_attributes = True
-
-
-class RateComment(BaseModel):
-    rate: int = Field(ge=1, le=10)

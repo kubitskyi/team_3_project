@@ -36,12 +36,13 @@ async def upload_photo(file: UploadFile = File(...),
             db.add(new_tag)
             db.commit()
         tags.append(new_tag)
+        
     new_photo = posts_crud.create_photo(db=db, photo_url=photo_url, tags=tags,public_id=public_id, description=description,current_user=current_user)
     return new_photo
 
     
-# , response_model=PhotoResponse
-@router.delete("/photo/{photo_id}")
+
+@router.delete("/photo/{photo_id}", response_model=dict)
 async def delete_photo(photo_id: int, db: Session = Depends(get_db),current_user: User = Depends(auth_service.get_current_user)):
     
     photo = db.query(Photo).filter(Photo.id == photo_id).one_or_none()
@@ -90,3 +91,17 @@ async def update_photo(photo_id: int,
 @router.get("/photo/{photo_id}", response_model=PhotoResponse)
 async def get_photo(photo_id: int, db: Session = Depends(get_db)):
     return posts_crud.get_photo(photo_id, db)
+
+
+@router.post("/photo/{photo_id}/rate", response_model=dict)
+async def add_rate(photo_id: int, rate: int, db: Session = Depends(get_db), current_user: User = Depends(auth_service.get_current_user)):
+    db_photo = db.query(Photo).filter(Photo.id == photo_id).first()
+    if rate < 1 or rate > 5:
+        raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
+
+    if not db_photo:
+        raise HTTPException(status_code=404, detail="Photo not found")
+
+    if db_photo.user_id != current_user.id:
+        return posts_crud.add_rate(user=current_user, photo_id=photo_id, rate=rate, db=db)
+    return {"message": "The rating has been successfully assigned!"}

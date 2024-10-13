@@ -16,7 +16,6 @@ cloudinary_config = cloudinary.config(
 def upload_file(file):
      # Створення унікального імені для файлу
     unique_filename = str(uuid.uuid4()) + pathlib.Path(file.filename).suffix
-
     # Завантаження файлу на Cloudinary
     try:
         upload_result = cloudinary.uploader.upload(file.file, public_id=unique_filename)
