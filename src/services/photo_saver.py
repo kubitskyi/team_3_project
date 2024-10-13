@@ -1,27 +1,31 @@
+"""Handler for work with Cloudinary service"""
 import uuid
 import pathlib
-import qrcode
 import cloudinary
 import cloudinary.uploader
 from fastapi import HTTPException
+
 from src.conf.config import settings
 
-cloudinary_config = cloudinary.config( 
-  cloud_name = settings.cloudinary_name, 
-  api_key = settings.cloudinary_api_key,
-  api_secret = settings.cloudinary_api_secret,
-  secure = settings.cloudinary_secure
+
+cloudinary_config = cloudinary.config(
+    cloud_name = settings.cloudinary_name,
+    api_key = settings.cloudinary_api_key,
+    api_secret = settings.cloudinary_api_secret,
+    secure = settings.cloudinary_secure
 )
 
 def upload_file(file):
-     # Створення унікального імені для файлу
+    # Створення унікального імені для файлу
     unique_filename = str(uuid.uuid4()) + pathlib.Path(file.filename).suffix
-
     # Завантаження файлу на Cloudinary
     try:
         upload_result = cloudinary.uploader.upload(file.file, public_id=unique_filename)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Помилка завантаження на Cloudinary: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error downloading to Cloudinary: {str(e)}"
+        ) from e
     return upload_result['url'], upload_result['public_id']
 
 def delete_image(public_id):
@@ -30,7 +34,6 @@ def delete_image(public_id):
     if response["result"] == "ok":
         return True
     return False
-
 
 def transform_image(public_id):
     """Трансформация изображения"""

@@ -1,11 +1,12 @@
+"""CRUD ops for comments"""
 from sqlalchemy.orm import Session
-from src.database.models import Comment
-from src.schemas.comments import CommentCreate, CommentUpdate, CommentResponse, CommentBase
 from fastapi import HTTPException, status
+from src.database.models import Comment
+from src.schemas.comments import CommentCreate, CommentUpdate
 
 
 def create_comment(db: Session, author_id: int, photo_id: int, comment: CommentCreate):
-    db_comment = Comment(author_id=author_id, photo_id=photo_id, **comment.dict())
+    db_comment = Comment(author_id=author_id, photo_id=photo_id, **comment.model_dump())
     db.add(db_comment)
     db.commit()
     db.refresh(db_comment)
@@ -13,10 +14,13 @@ def create_comment(db: Session, author_id: int, photo_id: int, comment: CommentC
 
 
 def update_comment(db: Session, comment_id: int, author_id: int, comment: CommentUpdate):
-    db_comment = db.query(Comment).filter(Comment.id == comment_id, Comment.author_id == author_id).first()
+    db_comment = db.query(Comment).filter(
+        Comment.id == comment_id,
+        Comment.author_id == author_id
+    ).first()
     if not db_comment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
-    
+
     if comment.content:
         db_comment.content = comment.content
 
@@ -42,7 +46,7 @@ def rate_comment(db: Session, comment_id: int, rate: int):
     db_comment = db.query(Comment).filter(Comment.id == comment_id).first()
     if not db_comment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
-    
+
     if db_comment:
         print("="*25)
         print(type(rate))
