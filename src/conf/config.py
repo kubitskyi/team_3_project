@@ -10,11 +10,13 @@ class Settings(BaseSettings):
     mail_from: str
     mail_port: int
     mail_server: str
+    mail_from_name: str
     redis_host: str = 'localhost'
     redis_port: int = 6379
     cloudinary_name: str
     cloudinary_api_key: str
     cloudinary_api_secret: str
+    cloudinary_secure: bool
 
     class Config:
         env_file = ".env"
