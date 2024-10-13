@@ -234,9 +234,8 @@ async def change_user_role(
             doublecheck = await count_admins(db)
             if doublecheck < 2:
                 return {"message": "Role can't be changed. You are last Admin."}
-            else:
-                await change_role(user, new_role, db)
-                return {"message": f"Role changed to {new_role}."}
+            await change_role(user, new_role, db)
+            return {"message": f"Role changed to {new_role}."}
 
 
 
@@ -275,6 +274,5 @@ async def ban_user(
     if check and confirmation:
         if current_user.id == user.id:
             return {"message": "You are trying to ban yourself."}
-        else:
-            await ban_unban(user, db)
-            return {"message": "User banned."}
+        await ban_unban(user, db)
+        return {"message": "User banned."}
