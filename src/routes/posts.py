@@ -23,9 +23,11 @@ async def upload_photo(
     current_user: User = Depends(auth_service.get_current_user)
 ):
     """Uploads a photo to Cloudinary, associates it with the current user, and optionally tags it.
+
     This endpoint allows a user to upload a photo, which is saved in Cloudinary. The user can also
     provide a description and up to 5 tags that categorize the photo. If any of the tags do not
     exist, they will be created in the database.
+
     Args:
         file (UploadFile, optional): The image file to be uploaded. Required.
         description (str, optional): A description for the photo. Defaults to "No description".
@@ -35,8 +37,10 @@ async def upload_photo(
             to an empty list.
         current_user (User, optional): The currently authenticated user uploading the photo.
             Defaults to Depends(auth_service.get_current_user).
+
     Raises:
         HTTPException: Raised with status 400 if more than 5 tags are provided.
+
     Returns:
         PhotoCreate: The newly created photo object containing the photo URL, public ID,
             description, and tags.
@@ -80,18 +84,22 @@ async def delete_photo(
     current_user: User = Depends(auth_service.get_current_user)
 ):
     """Deletes a photo by its ID if the current user is authorized.
+
     This endpoint allows a user to delete a photo they own. If the current user is the owner of the
-    photo, the photo is removed from the database. Otherwise, a `400 Bad Request` is raised due to
-    insufficient authorization.
+    photo, moderator or admin, the photo is removed from the database. Otherwise, a
+    `400 Bad Request` is raised due to insufficient authorization.
+
     Args:
         photo_id (int): The ID of the photo to be deleted.
         db (Session, optional): The database session for querying and deleting the photo.
             Defaults to Depends(get_db).
         current_user (User, optional): The currently authenticated user trying to delete the photo.
             Defaults to Depends(auth_service.get_current_user).
+
     Raises:
         HTTPException: Raised with status 400 if the user is not authorized to delete the photo,
             or if the photo does not exist.
+
     Returns:
         dict: A dictionary confirming that the photo has been successfully deleted, or
             appropriate error messages.
@@ -99,11 +107,10 @@ async def delete_photo(
     photo = db.query(Photo).filter(Photo.id == photo_id).one_or_none()
     if  auth_service.check_access(user = current_user.id, owner_id=photo.user_id):
         return posts_crud.delete_photo(photo_id, db)
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Not authorized",
-        )
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Not authorized",
+    )
 
 
 @router.put("/photo/{photo_id}", response_model=PhotoUpdate)
@@ -115,10 +122,13 @@ async def update_photo(
     current_user: User = Depends(auth_service.get_current_user)
 ):
     """Updates a photo's description and tags if the current user is authorized.
-    This endpoint allows the owner of a photo to update its description and associated tags.
-    If the user provides new tags that do not already exist, they will be created in the database.
+
+    This endpoint allows the owner of a photo, admin and moderator to update its description and
+    associated tags. If the user provides new tags that do not already exist, they will be created
+    in the database.
     A maximum of 5 tags can be assigned to each photo. The operation is allowed only if the
     current user is the owner of the photo.
+
     Args:
         photo_id (int): The ID of the photo to be updated.
         description (str, optional): The new description for the photo. Defaults to
@@ -129,10 +139,12 @@ async def update_photo(
             separated by commas. Defaults to an empty list.
         current_user (User, optional): The currently authenticated user attempting to update
             the photo. Defaults to Depends(auth_service.get_current_user).
+
     Raises:
         HTTPException: Raised with status 400 if the user is not authorized to update the photo or
             if more than 5 tags are provided.
         HTTPException: Raised with status 404 if the photo does not exist.
+
     Returns:
         PhotoUpdate: The updated photo object containing the new description and tags.
     """
@@ -168,15 +180,19 @@ async def update_photo(
 @router.get("/photo/{photo_id}", response_model=PhotoResponse)
 async def get_photo(photo_id: int, db: Session = Depends(get_db)):
     """Retrieves a photo by its ID.
+
     This endpoint fetches and returns the details of a photo from the database using its unique ID.
     The photo's metadata, such as description, tags, and upload date, is returned in the response.
+
     Args:
         photo_id (int): The unique identifier of the photo to retrieve.
         db (Session, optional): The database session used for querying the photo.
             Defaults to Depends(get_db).
+
     Returns:
         PhotoResponse: An object containing the photo's details such as URL, description, tags,
         and other related information.
+
     Raises:
         HTTPException: If the photo does not exist, a 404 Not Found error is raised.
     """

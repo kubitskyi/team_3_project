@@ -21,7 +21,7 @@ get_refr_token = HTTPBearer()
 
 
 @router.get(
-    "/",
+    "/{username}",
     response_model=UserPublic,
     dependencies=[Depends(RateLimiter(times=5, seconds=30))]
 )
@@ -275,4 +275,4 @@ async def ban_user(
         if current_user.id == user.id:
             return {"message": "You are trying to ban yourself."}
         await ban_unban(user, db)
-        return {"message": "User banned."}
+        return {"message": "User status changed."}

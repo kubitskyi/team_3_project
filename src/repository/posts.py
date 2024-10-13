@@ -130,7 +130,7 @@ def add_rate(user, photo_id, rate, db: Session):
 
     # Оновлення середнього рейтингу
     update_photo_average_rating(photo_id, db)
-    return {"message": "Рейтинг для фото додано"}
+    return {"message": "Rating is added."}
 
 
 def update_photo_average_rating(photo_id: int, db: Session):
