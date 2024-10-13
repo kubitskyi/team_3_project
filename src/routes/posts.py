@@ -19,10 +19,9 @@ async def upload_photo(file: UploadFile = File(...),
                        db: Session = Depends(get_db),
                        tags: List[str] = [],
                        current_user: User = Depends(auth_service.get_current_user)):
-    photo_url, _ = upload_file(file)
     
-    print("="*30)
-    print(tags)
+    photo_url, public_id = upload_file(file)
+    
     tags_list = []
     if len(tags) > 0:
         tags_list = tags[0].split(",")
@@ -37,17 +36,12 @@ async def upload_photo(file: UploadFile = File(...),
             new_tag = Tag(name=tag)
             db.add(new_tag)
             db.commit()
-            print("%"*30)
-            print(new_tag.id)
-            
         tags.append(new_tag)
-
-    new_photo = posts_crud.create_photo(db=db, photo_url=photo_url, tags=tags, description=description,current_user=current_user)
-
+    new_photo = posts_crud.create_photo(db=db, photo_url=photo_url, tags=tags,public_id=public_id, description=description,current_user=current_user)
     return new_photo
     
-   
-@router.delete("/photo/{photo_id}", response_model=PhotoResponse)
+# , response_model=PhotoResponse
+@router.delete("/photo/{photo_id}")
 async def delete_photo(photo_id: int, db: Session = Depends(get_db)):
     return posts_crud.delete_photo(photo_id, db)
 

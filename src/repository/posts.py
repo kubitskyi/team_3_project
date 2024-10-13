@@ -1,8 +1,11 @@
 import os
+import cloudinary
+import cloudinary.api
 from typing import List
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from src.services.cloudinary import delete_image
 from src.database.models import Photo, Tag, User
 from src.schemas.posts import PhotoResponse, PhotoUpdate
 
@@ -13,6 +16,7 @@ def create_photo(db: Session,
                  photo_url: str, 
                  description,
                  tags,
+                 public_id,
                  current_user: User):
     
     if not current_user:
@@ -23,6 +27,7 @@ def create_photo(db: Session,
         description=description, 
         user_id = current_user.id,
         tags=tags,
+        public_id = public_id,
         updated_at = func.now()
         )
     db.add(new_photo)
@@ -46,15 +51,15 @@ def delete_photo(photo_id: int, db: Session):
 
     if not photo:
         raise HTTPException(status_code=404, detail="Фото не найдено")
-
-    # Удаление фото с диска
-    if os.path.exists(photo.file_path):
-        os.remove(photo.file_path)
-
-    # Удаление записи о фото и связанных тегов из базы данных
-    db.query(Tag).filter(Tag.photo_id == photo_id).delete()
-    db.delete(photo)
-    db.commit()
+        
+    try:
+        response = cloudinary.api.resource(photo.public_id)
+        print("Image exists:", response)
+        db.query(Photo).filter(Photo.id == photo.id).delete()
+        db.delete(photo)
+        db.commit()
+    except cloudinary.exceptions.NotFound:
+        print("Image does not exist")
 
     return {"message": "Фото удалено"}
 

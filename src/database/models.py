@@ -14,8 +14,8 @@ Base = declarative_base()
 photo_tag_association = Table(
     'photo_tag_association',
     Base.metadata,
-    Column('photo_id', ForeignKey('photos.id'), primary_key=True),
-    Column('tag_id', ForeignKey('tags.id'), primary_key=True)
+    Column('photo_id', ForeignKey('photos.id',ondelete='CASCADE'), primary_key=True),
+    Column('tag_id', ForeignKey('tags.id',ondelete='CASCADE'), primary_key=True)
 )
 
 
@@ -68,6 +68,7 @@ class Photo(Base):
     id = Column(Integer, primary_key=True, index=True)
     image_url = Column(String, nullable=False)
     description = Column(String, nullable=True)
+    public_id = Column(String, nullable=True)
     user_id = Column(ForeignKey('users.id', ondelete='CASCADE'),default=None)
     user = relationship("User", back_populates="photos")
     created_at = Column(DateTime, server_default=func.now())
