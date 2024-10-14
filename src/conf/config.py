@@ -3,6 +3,11 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     sqlalchemy_database_url: str
+    postgres_db: str
+    postgres_user: str
+    postgres_password: str
+    postgres_port: int = 5432
+    postgres_host: str = "127.0.0.1"
     secret_key: str
     algorithm: str
     mail_username: str
