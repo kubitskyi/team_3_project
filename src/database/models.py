@@ -1,6 +1,6 @@
 """Models"""
 from enum import Enum
-from sqlalchemy import Table, Column, Integer, String, Text, Boolean, DateTime, func, DECIMAL, Float
+from sqlalchemy import Table, Column, Integer, String, Text, Boolean, DateTime, func, Float
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.schema import ForeignKey
@@ -60,8 +60,8 @@ class User(Base):
     role = Column(SQLAlchemyEnum(RoleEnum), default=RoleEnum.user)
     about = Column(Text, nullable=True, default=None)
     photos = relationship("Photo", back_populates="user")
-    
-    
+
+
 class Photo(Base):
     __tablename__ = 'photos'
     id = Column(Integer, primary_key=True, index=True)
@@ -129,11 +129,3 @@ class PhotoRating(Base):
     rating = Column(Integer, nullable=False)  # Рейтинг від 1 до 5
     user = relationship('User', back_populates='photo_ratings')
     photo = relationship('Photo', back_populates='ratings')
-
-    
-class PhotoLink(Base):
-    __tablename__ = 'photo_links'
-    id = Column(Integer, primary_key=True, index=True)
-    original_url = Column(String, nullable=False)
-    transformed_url = Column(String, nullable=False)
-    qr_code_url = Column(String, nullable=False)
