@@ -9,6 +9,7 @@ from src.repository.comments import (
 )
 from src.database.connect import get_db
 from src.services.auth import auth_service as auth_s
+from src.templates.message import DELETE_COMMENT_ACCESS_ERROR
 
 
 router = APIRouter(prefix="/comments", tags=["Comments"])
@@ -104,7 +105,7 @@ def delete_existing_comment(
         return delete_comment(db, comment_id=comment_id)
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
-        detail="You must be admin or moder for delete this"
+        detail=DELETE_COMMENT_ACCESS_ERROR
     )
 
 
@@ -126,18 +127,3 @@ def get_comments_for_photo(photo_id: int, db: Session = Depends(get_db)):
         according to the `CommentResponse` schema.
     """
     return get_comments_by_photo(db, photo_id=photo_id)
-
-
-# @router.put("/{comment_id}/rate", response_model=RateComment)
-# def rate_existing_comment(
-#     comment_id: int,
-#     rate: RateComment,
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(auth_s.get_current_user)
-# ):
-#     if not current_user:
-#          raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You are not our user")
-
-#     if not (1 <= rate.rate <= 10):
-#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Rate must be between 1 and 10")
-#     return rate_comment(db, comment_id=comment_id, rate=rate)

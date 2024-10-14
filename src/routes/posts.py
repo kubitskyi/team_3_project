@@ -9,6 +9,7 @@ from src.schemas.posts import PhotoResponse, PhotoCreate, PhotoUpdate
 from src.repository import posts as posts_crud
 from src.services.photo_service import  upload_file
 from src.services.auth import auth_service
+from src.templates.message import TO_MANY_TAGS, NOT_AUTH, SUCCESSFUL_ADD_RATE
 
 
 router = APIRouter(prefix="/posts", tags=["Posts"])
@@ -56,7 +57,7 @@ async def upload_photo(
     if len(tags_list) > 5:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
-            detail="Too many tags. Available only 5 tags."
+            detail=TO_MANY_TAGS
         )
 
     tags = []
@@ -109,7 +110,7 @@ async def delete_photo(
         return posts_crud.delete_photo(photo_id, db)
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Not authorized",
+        detail=NOT_AUTH,
     )
 
 
@@ -159,7 +160,7 @@ async def update_photo(
         if len(tags_list) > 5:
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
-                detail="Too many tags. Available only 5 tags."
+                detail=TO_MANY_TAGS
             )
         tags = []
         for tag in tags_list:
@@ -174,7 +175,7 @@ async def update_photo(
         return posts_crud.update_photo(photo_id, description, tags, db)
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Not authorized",
+        detail=NOT_AUTH,
     )
 
 @router.get("/photo/{photo_id}", response_model=PhotoResponse)
@@ -238,4 +239,4 @@ async def add_rate(
 
     if db_photo.user_id != current_user.id:
         return posts_crud.add_rate(user=current_user, photo_id=photo_id, rate=rate, db=db)
-    return {"message": "The rating has been successfully assigned!"}
+    return SUCCESSFUL_ADD_RATE

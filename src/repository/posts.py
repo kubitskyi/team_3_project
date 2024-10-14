@@ -7,7 +7,7 @@ from sqlalchemy import func
 from src.services.photo_service import delete_image
 from src.database.models import Photo, User, PhotoRating, Tag
 from src.schemas.posts import PhotoResponse, PhotoUpdate
-
+from src.templates.message import PHOTO_NOT_FOUND, SUCCESSFUL_ADD_RATE
 
 
 
@@ -96,7 +96,7 @@ def get_photo(photo_id: int, db: Session):
     # Поиск фотографии по ID
     photo = db.query(Photo).filter(Photo.id == photo_id).first()
     if not photo:
-        raise HTTPException(status_code=404, detail="Photo not found")
+        raise HTTPException(status_code=404, detail=PHOTO_NOT_FOUND)
 
     response_data = PhotoResponse(
         id=photo.id,
@@ -128,7 +128,7 @@ def add_rate(user, photo_id, rate, db: Session):
 
     # Оновлення середнього рейтингу
     update_photo_average_rating(photo_id, db)
-    return {"message": "Rating is added."}
+    return SUCCESSFUL_ADD_RATE
 
 
 def update_photo_average_rating(photo_id: int, db: Session):

@@ -7,7 +7,7 @@ class CropAndScaleRequest(BaseModel):
     height: int = Field(..., gt=0, description="Висота зображення в пікселях.")
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "photo_id": "photo_id",
                 "width": 800,
