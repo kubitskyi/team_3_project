@@ -1,5 +1,5 @@
 """Connecting to PostgreSQL"""
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, URL
 from sqlalchemy.orm import sessionmaker
 from fastapi import Request
 from src.conf.config import settings
