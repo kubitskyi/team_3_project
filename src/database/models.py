@@ -60,6 +60,7 @@ class User(Base):
     role = Column(SQLAlchemyEnum(RoleEnum), default=RoleEnum.user)
     about = Column(Text, nullable=True, default=None)
     photos = relationship("Photo", back_populates="user")
+    photo_ratings = relationship('PhotoRating', back_populates='user')
 
 
 class Photo(Base):
@@ -77,7 +78,6 @@ class Photo(Base):
     # Рейтинг
     average_rating = Column(Float, default=0)
     ratings = relationship('PhotoRating', back_populates='photo', cascade="all, delete")
-    photo_ratings = relationship('PhotoRating', back_populates='user', cascade="all, delete")
     # Відношення для трансформацій
     transformations = relationship('PhotoTransformation', back_populates='photo', cascade="all, delete")
 
@@ -139,12 +139,9 @@ class PhotoTransformation(Base):
     __tablename__ = 'photo_transformations'
     
     id = Column(Integer, primary_key=True, index=True)
-    photo_id = Column(ForeignKey('photos.id', ondelete='CASCADE'))
+    original_photo_id = Column(ForeignKey('photos.id', ondelete='CASCADE'))
     photo = relationship('Photo', back_populates='transformations')
-    
     transformation_type = Column(String, nullable=False)  
-    transformation_parameters = Column(JSON, nullable=False) 
     # Силки
     image_url = Column(String, nullable=False) 
-    qr_code_url = Column(String, nullable=True) 
     created_at = Column(DateTime, server_default=func.now())

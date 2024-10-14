@@ -14,7 +14,7 @@ from src.services.auth import auth_service
 router = APIRouter(prefix="/posts", tags=["Posts"])
 
 
-@router.post("/photo", response_model=PhotoCreate)
+@router.post("/photo", response_model=PhotoResponse)
 async def upload_photo(
     file: UploadFile = File(...),
     description: str = "No description",

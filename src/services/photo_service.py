@@ -35,38 +35,33 @@ def delete_image(public_id):
 
 
 
-def crop_and_scale(image_public_id, width, height):
-    transformed_image = cloudinary.CloudinaryImage(image_public_id).build_url(
+def crop_and_scale(public_id, width, height):
+    transformed_image = cloudinary.CloudinaryImage(public_id).build_url(
         width=width, 
         height=height, 
         crop="fill"
     )
-    return transformed_image
+   
+    return transformed_image+".jpg"
+
+#======================= TO DO =========================
+
+# def add_text_overlay(image_public_id, text, font_size=30, color="white"):
+#     transformed_image = cloudinary.CloudinaryImage(image_public_id).build_url(
+#         overlay={"font_family": "Arial", "font_size": font_size, "text": text, "color": color},
+#         gravity="south",
+#         crop="scale"
+#     )
+#     return transformed_image
 
 
-def add_text_overlay(image_public_id, text, font_size=30, color="white"):
-    transformed_image = cloudinary.CloudinaryImage(image_public_id).build_url(
-        overlay={"font_family": "Arial", "font_size": font_size, "text": text, "color": color},
-        gravity="south",
-        crop="scale"
-    )
-    return transformed_image
+# def apply_filter(image_public_id, effect="sepia"):
+#     transformed_image = cloudinary.CloudinaryImage(image_public_id).build_url(
+#         effect=effect
+#     )
+#     return transformed_image
 
 
-def apply_filter(image_public_id, effect="sepia"):
-    transformed_image = cloudinary.CloudinaryImage(image_public_id).build_url(
-        effect=effect
-    )
-    return transformed_image
-
-# def transform_image(public_id):
-#     """Трансформация изображения"""
-#     transformed_url = cloudinary.CloudinaryImage(public_id).build_url(transformation=[
-#         {'width': 500, 'height': 500, 'crop': 'fill'}
-#     ])
-#     return transformed_url
-
-# TO DO ->
 # def generate_qr_code(link: str):
 #     """Генерация QR-кода для ссылки"""
 #     img = qrcode.make(link)

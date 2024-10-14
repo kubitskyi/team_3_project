@@ -1,4 +1,3 @@
-import os
 from typing import List
 import cloudinary
 import cloudinary.api
@@ -6,7 +5,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from src.services.photo_service import delete_image
-from src.database.models import Photo, User, PhotoRating
+from src.database.models import Photo, User, PhotoRating, Tag
 from src.schemas.posts import PhotoResponse, PhotoUpdate
 
 
