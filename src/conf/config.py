@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     cloudinary_api_key: str
     cloudinary_api_secret: str
     cloudinary_secure: bool
+    redis_psw: str
 
     class Config:
         env_file = ".env"
