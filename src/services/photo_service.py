@@ -20,7 +20,10 @@ def upload_file(file):
     try:
         upload_result = cloudinary.uploader.upload(file.file, public_id=unique_filename)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Помилка завантаження на Cloudinary: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Помилка завантаження на Cloudinary: {str(e)}"
+        ) from e
     return upload_result['url'], upload_result['public_id']
 
 def delete_image(public_id):

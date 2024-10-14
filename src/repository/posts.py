@@ -1,28 +1,32 @@
 import os
+from typing import List
 import cloudinary
 import cloudinary.api
-from typing import List
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from src.services.cloudinary import delete_image
-from src.database.models import Photo, User, PhotoRating, Tag
-from src.schemas.posts import PhotoResponse
+from src.services.photo_service import delete_image
+from src.database.models import Photo, User, PhotoRating
+from src.schemas.posts import PhotoResponse, PhotoUpdate
 
 
-def create_photo(db: Session, 
-                 photo_url: str, 
-                 description,
-                 tags,
-                 public_id,
-                 current_user: User):
-    
+
+
+def create_photo(
+    db: Session,
+    photo_url: str,
+    description,
+    tags,
+    public_id,
+    current_user: User
+):
+
     if not current_user:
-        raise HTTPException(status_code=403, detail="Неавторизовано")
-    
+        raise HTTPException(status_code=403, detail="Not autorized")
+
     new_photo = Photo(
-        image_url=photo_url, 
-        description=description, 
+        image_url=photo_url,
+        description=description,
         user_id = current_user.id,
         tags=tags,
         public_id = public_id,
@@ -49,8 +53,8 @@ def delete_photo(photo_id: int, db: Session):
     photo = db.query(Photo).filter(Photo.id == photo_id).first()
 
     if not photo:
-        raise HTTPException(status_code=404, detail="Фото не найдено")
-        
+        raise HTTPException(status_code=404, detail="Photo not found")
+
     try:
         result = delete_image(photo.public_id)
     except cloudinary.exceptions.NotFound as e:
@@ -67,12 +71,12 @@ def update_photo(photo_id: int, description: str, tags: List[str], db: Session):
     photo = db.query(Photo).filter(Photo.id == photo_id).first()
 
     if not photo:
-        raise HTTPException(status_code=404, detail="Фото не найдено")
+        raise HTTPException(status_code=404, detail="Photo not found")
 
     # Обновление описания фото
     photo.description = description
     photo.tags = tags
-    
+
     # Обновление тегов
     db.query(Tag).filter(Tag.photo_id == photo_id).delete()  # Удаляем старые теги
     for tag_name in tags:
@@ -93,7 +97,7 @@ def get_photo(photo_id: int, db: Session):
     # Поиск фотографии по ID
     photo = db.query(Photo).filter(Photo.id == photo_id).first()
     if not photo:
-        raise HTTPException(status_code=404, detail="Фото не найдено")
+        raise HTTPException(status_code=404, detail="Photo not found")
 
     response_data = PhotoResponse(
         id=photo.id,
@@ -109,20 +113,23 @@ def get_photo(photo_id: int, db: Session):
 
 def add_rate(user, photo_id, rate, db: Session):
     # Додавання нового рейтингу для фото
-    db_rating = db.query(PhotoRating).filter(PhotoRating.user_id==user.id, PhotoRating.photo_id==photo_id).first()
+    db_rating = db.query(PhotoRating).filter(
+        PhotoRating.user_id==user.id,
+        PhotoRating.photo_id==photo_id
+    ).first()
     print(db_rating)
     if db_rating:
         print(f"Rate:{rate}")
         db_rating.rating=rate
     else:
-        db_rating = PhotoRating(user_id=user.id, photo_id=photo_id, rating=rate)  # user_id не враховуємо
+        db_rating = PhotoRating(user_id=user.id, photo_id=photo_id, rating=rate)  # user_id не врах
     db.add(db_rating)
     db.commit()
     db.refresh(db_rating)
 
     # Оновлення середнього рейтингу
     update_photo_average_rating(photo_id, db)
-    return {"message": "Рейтинг для фото додано"} 
+    return {"message": "Rating is added."}
 
 
 def update_photo_average_rating(photo_id: int, db: Session):

@@ -60,8 +60,8 @@ class User(Base):
     role = Column(SQLAlchemyEnum(RoleEnum), default=RoleEnum.user)
     about = Column(Text, nullable=True, default=None)
     photos = relationship("Photo", back_populates="user")
-    
-    
+
+
 class Photo(Base):
     __tablename__ = 'photos'
     id = Column(Integer, primary_key=True, index=True)
