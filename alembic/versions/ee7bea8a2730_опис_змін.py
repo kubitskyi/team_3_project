@@ -1,8 +1,8 @@
-"""add rate
+"""Опис змін
 
-Revision ID: 146858b87546
-Revises: eece3f3be199
-Create Date: 2024-10-13 13:14:34.369271
+Revision ID: ee7bea8a2730
+Revises: 
+Create Date: 2024-10-14 20:10:02.570935
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '146858b87546'
-down_revision: Union[str, None] = 'eece3f3be199'
+revision: str = 'ee7bea8a2730'
+down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
