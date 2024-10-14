@@ -6,8 +6,15 @@ from src.conf.config import settings
 from src.database.models import Base
 
 
-SQLALCHEMY_DATABASE_URL = settings.sqlalchemy_database_url
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+# SQLALCHEMY_DATABASE_URL = settings.sqlalchemy_database_url
+connection_string = URL.create(
+    'postgresql',
+    username=settings.postgres_user,
+    password=settings.postgres_password,
+    host=settings.postgres_host,
+    database=settings.postgres_db,
+)
+engine = create_engine(connection_string)
 
 Base.metadata.create_all(engine)
 
