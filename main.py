@@ -55,9 +55,11 @@ async def lifespan(app: FastAPI):
     r = await redis.Redis(
         host=settings.redis_host,
         port=settings.redis_port,
+        password=settings.redis_password,
         db=0,
         encoding="utf-8",
-        decode_responses=True
+        decode_responses=True,
+        ssl=True
     )
     await FastAPILimiter.init(r)
     app.state.redis = r
