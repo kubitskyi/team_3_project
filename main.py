@@ -33,11 +33,7 @@ from fastapi_limiter import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter
 
 from src.conf.config import settings
-from src.routes import auth
-from src.routes import users
-from src.routes import posts
-from src.routes import comments
-
+from src.routes import auth, transformations, users, posts, comments
 
 r = None
 
@@ -87,6 +83,7 @@ app.include_router(auth.router, prefix='/api')
 app.include_router(users.router, prefix='/api')
 app.include_router(posts.router, prefix='/api')
 app.include_router(comments.router, prefix='/api')
+app.include_router(transformations.router, prefix='/api')
 
 
 @app.get("/", tags=['Helthcheck'], dependencies=[Depends(RateLimiter(times=5, seconds=30))])
