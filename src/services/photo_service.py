@@ -20,7 +20,10 @@ def upload_file(file):
     try:
         upload_result = cloudinary.uploader.upload(file.file, public_id=unique_filename)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Помилка завантаження на Cloudinary: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Помилка завантаження на Cloudinary: {str(e)}"
+        ) from e
     return upload_result['url'], upload_result['public_id']
 
 def delete_image(public_id):
@@ -31,15 +34,34 @@ def delete_image(public_id):
     return False
 
 
-def transform_image(public_id):
-    """Трансформация изображения"""
-    transformed_url = cloudinary.CloudinaryImage(public_id).build_url(transformation=[
-        {'width': 500, 'height': 500, 'crop': 'fill'}
-    ])
-    return transformed_url
+
+def crop_and_scale(public_id, width, height):
+    transformed_image = cloudinary.CloudinaryImage(public_id).build_url(
+        width=width, 
+        height=height, 
+        crop="fill"
+    )
+   
+    return transformed_image+".jpg"
+
+#======================= TO DO =========================
+
+# def add_text_overlay(image_public_id, text, font_size=30, color="white"):
+#     transformed_image = cloudinary.CloudinaryImage(image_public_id).build_url(
+#         overlay={"font_family": "Arial", "font_size": font_size, "text": text, "color": color},
+#         gravity="south",
+#         crop="scale"
+#     )
+#     return transformed_image
 
 
-# TO DO ->
+# def apply_filter(image_public_id, effect="sepia"):
+#     transformed_image = cloudinary.CloudinaryImage(image_public_id).build_url(
+#         effect=effect
+#     )
+#     return transformed_image
+
+
 # def generate_qr_code(link: str):
 #     """Генерация QR-кода для ссылки"""
 #     img = qrcode.make(link)

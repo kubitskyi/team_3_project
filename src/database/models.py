@@ -1,6 +1,6 @@
 """Models"""
 from enum import Enum
-from sqlalchemy import Table, Column, Integer, String, Text, Boolean, DateTime, func, DECIMAL, Float
+from sqlalchemy import Table, Column, Integer, String, Text, Boolean, DateTime, func, JSON, Float
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.schema import ForeignKey
@@ -60,8 +60,9 @@ class User(Base):
     role = Column(SQLAlchemyEnum(RoleEnum), default=RoleEnum.user)
     about = Column(Text, nullable=True, default=None)
     photos = relationship("Photo", back_populates="user")
-    
-    
+    photo_ratings = relationship('PhotoRating', back_populates='user')
+
+
 class Photo(Base):
     __tablename__ = 'photos'
     id = Column(Integer, primary_key=True, index=True)
@@ -72,10 +73,13 @@ class Photo(Base):
     user = relationship("User", back_populates="photos")
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now(), nullable=True)
+    # Теги
     tags = relationship('Tag', secondary=photo_tag_association, back_populates="photos")
+    # Рейтинг
     average_rating = Column(Float, default=0)
     ratings = relationship('PhotoRating', back_populates='photo', cascade="all, delete")
-    photo_ratings = relationship('PhotoRating', back_populates='user', cascade="all, delete")
+    # Відношення для трансформацій
+    transformations = relationship('PhotoTransformation', back_populates='photo', cascade="all, delete")
 
 
 class Tag(Base):
@@ -131,9 +135,13 @@ class PhotoRating(Base):
     photo = relationship('Photo', back_populates='ratings')
 
     
-class PhotoLink(Base):
-    __tablename__ = 'photo_links'
+class PhotoTransformation(Base):
+    __tablename__ = 'photo_transformations'
+    
     id = Column(Integer, primary_key=True, index=True)
-    original_url = Column(String, nullable=False)
-    transformed_url = Column(String, nullable=False)
-    qr_code_url = Column(String, nullable=False)
+    original_photo_id = Column(ForeignKey('photos.id', ondelete='CASCADE'))
+    photo = relationship('Photo', back_populates='transformations')
+    transformation_type = Column(String, nullable=False)  
+    # Силки
+    image_url = Column(String, nullable=False) 
+    created_at = Column(DateTime, server_default=func.now())
