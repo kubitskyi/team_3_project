@@ -37,37 +37,37 @@ from src.routes import auth, transformations, users, posts, comments
 
 r = None
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Define the lifespan of the FastAPI application.
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     """Define the lifespan of the FastAPI application.
 
-    This function manages the lifecycle of the FastAPI application, initializing and closing
-    resources such as Redis and FastAPILimiter during the app's lifespan.
+#     This function manages the lifecycle of the FastAPI application, initializing and closing
+#     resources such as Redis and FastAPILimiter during the app's lifespan.
 
-    Args:
-        app (FastAPI): The FastAPI application instance.
+#     Args:
+#         app (FastAPI): The FastAPI application instance.
 
-    Yields:
-        Allows the FastAPI application to run within this context, managing resources.
-    """
+#     Yields:
+#         Allows the FastAPI application to run within this context, managing resources.
+#     """
 
-    global r
-    r = await redis.Redis(
-        host=settings.redis_host,
-        port=settings.redis_port,
-        db=0,
-        encoding="utf-8",
-        decode_responses=True
-    )
-    await FastAPILimiter.init(r)
-    app.state.redis = r
-    yield
-    await r.close()
+#     global r
+#     r = await redis.Redis(
+#         host=settings.redis_host,
+#         port=settings.redis_port,
+#         db=0,
+#         encoding="utf-8",
+#         decode_responses=True
+#     )
+#     await FastAPILimiter.init(r)
+#     app.state.redis = r
+#     yield
+#     await r.close()
 
 
 app = FastAPI(
     title="PixnTalk",
-    lifespan=lifespan,
+    # lifespan=lifespan,
     description="PixnTalk is a social networking platform designed to enhance user interaction \
         and engagement through dynamic features. Users can create accounts, manage their profiles, \
         and participate in discussions via posts and comments. The app allows users to upload \
