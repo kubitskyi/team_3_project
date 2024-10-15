@@ -151,8 +151,7 @@ async def update_photo(
         PhotoUpdate: The updated photo object containing the new description and tags.
     """
     
-    print("===="*20)
-    print(tags)
+
     photo = db.query(Photo).filter(Photo.id == photo_id).one_or_none()
     
     if  auth_service.check_access(user = current_user.id, owner_id=photo.user_id):
