@@ -1,13 +1,13 @@
 """Router to use transformations to photo"""
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-
+from fastapi.responses import StreamingResponse
 from src.schemas.transformations import CropAndScaleRequest
 from src.database.connect import get_db
-from src.database.models import User, Photo
+from src.database.models import User, Photo, PhotoTransformation
 from src.services.auth import auth_service as auth_s
 from src.repository.transformations import add_transform_image
-from src.services.photo_service import crop_and_scale
+from src.services.photo_service import crop_and_scale, generate_qr_code
 from src.templates.message import OWNER_CHECK_ERROR_MSG
 
 
@@ -55,3 +55,13 @@ def transform_image(
             )
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail=OWNER_CHECK_ERROR_MSG)
+
+
+@router.post("/get-qrcode-link/{photo_id}")
+def get_qrcode_link(photo_id, db: Session = Depends(get_db)):
+    try:
+        photo = db.query(PhotoTransformation).filter(PhotoTransformation.id == photo_id).first()
+        response = generate_qr_code(photo.image_url)
+        return StreamingResponse(response, media_type="image/png")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -1,5 +1,6 @@
 """Service to work with Cloudinary"""
 import uuid
+import io
 import pathlib
 import qrcode
 import cloudinary
@@ -84,6 +85,21 @@ def crop_and_scale(public_id: str, width: int, height: int) -> str:
     )
     return transformed_image + ".jpg"
 
+def generate_qr_code(link: str):
+    # Створюємо об'єкт QR-коду
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(link)
+    qr.make(fit=True)
+
+    # Генеруємо зображення
+    img = qr.make_image(fill="black", back_color="white")
+
+    # Конвертуємо зображення в байти
+    img_byte_arr = io.BytesIO()
+    img.save(img_byte_arr, format='PNG')
+    img_byte_arr.seek(0)
+    return img_byte_arr
+
 # ======================= TO DO =========================
 
 # def add_text_overlay(image_public_id, text, font_size=30, color="white"):
@@ -102,10 +118,3 @@ def crop_and_scale(public_id: str, width: int, height: int) -> str:
 #     return transformed_image
 
 
-# def generate_qr_code(link: str):
-#     """Генерация QR-кода для ссылки"""
-#     img = qrcode.make(link)
-#     buffer = BytesIO()
-#     img.save(buffer, format="PNG")
-#     buffer.seek(0)
-#     return buffer

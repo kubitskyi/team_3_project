@@ -59,11 +59,7 @@ async def lifespan(app_: FastAPI):
         db=0,
         encoding="utf-8",
         decode_responses=True,
-<<<<<<< HEAD
         ssl=True
-=======
-        ssl=settings.redis_ssl
->>>>>>> dev
     )
     await FastAPILimiter.init(r)
     app_.state.redis = r
