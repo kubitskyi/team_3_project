@@ -2,11 +2,15 @@
 from sqlalchemy import create_engine, URL
 from sqlalchemy.orm import sessionmaker
 from fastapi import Request
+
 from src.conf.config import settings
 from src.database.models import Base
 
 
-# SQLALCHEMY_DATABASE_URL = settings.sqlalchemy_database_url
+class EngineConnectException(Exception):
+    """Exception to check correct engine connection."""
+
+
 connection_string = URL.create(
     'postgresql',
     username=settings.postgres_user,
@@ -32,9 +36,10 @@ def get_redis(request: Request):
     """Redis init from request"""
     return request.app.state.redis
 
+
 if __name__=="__main__":
     try:
         with engine.connect() as connection:
             print("Connection successful!")
-    except Exception as e:
+    except EngineConnectException as e:
         print(f"Connection failed: {e}")

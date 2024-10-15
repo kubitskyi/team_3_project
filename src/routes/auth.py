@@ -30,22 +30,24 @@ async def signup(
     request: Request,
     db: Session = Depends(get_db)
 ) -> dict:
-    """Handles user registration by creating a new user account.
-
+    """## Handles user registration by creating a new user account.
+    ```
+    /api/auth/signup
+    ```
     This endpoint allows a new user to register by providing their name, email, and password.
     The password is hashed before being stored in the database. If the email is already in use,
     an HTTP 409 Conflict error is raised.
 
-    Args:
+    ### Args:
         body (UserScema): The request body containing the new user's data, including
             name, email, and password.
         db (Session, optional): The database session dependency, automatically injected by FastAPI.
 
-    Raises:
+    ### Raises:
         HTTPException: If the email provided is already associated with an existing account,
-        a 409 Conflict error is raised with the message "Account already exists".
+            a 409 Conflict error is raised with the message "Account already exists".
 
-    Returns:
+    ### Returns:
         dict: A dictionary containing the newly created user's data and a success message.
             The dictionary includes:
             - "user": The `UserReturn` model instance representing the new user.
@@ -65,7 +67,6 @@ async def signup(
         "detail": "User successfully created. Check your email for confirmation."
     }
 
-
 @router.post(
     "/login",
     response_model=TokenModel,
@@ -76,25 +77,27 @@ async def login(
     db: Session = Depends(get_db),
     redis = Depends(get_redis)
 ) -> TokenModel:
-    """Authenticates a user and generates access and refresh tokens.
-
+    """## Authenticates a user and generates access and refresh tokens.
+    ```
+    /api/auth/login
+    ```
     This endpoint allows a registered user to log in by providing their email (as name)
     and password. If the credentials are correct, it returns a pair of JWT tokens:
     an access token and a refresh token. If the credentials are incorrect, an appropriate
     HTTP error is raised.
 
-    Args:
+    ### Args:
         body (OAuth2PasswordRequestForm, optional): The login form data containing the name
         (email) and password. This is automatically populated by FastAPI using dependency injection.
         db (Session, optional): The database session dependency, automatically injected by FastAPI.
 
-    Raises:
+    ### Raises:
         HTTPException: If the user does not exist, a 404 Not Found error is raised
             with the message "Invalid data".
         HTTPException: If the password is incorrect, a 401 Unauthorized error is raised
             with the message "Invalid data".
 
-    Returns:
+    ### Returns:
         TokenModel: An object containing the access token, refresh token,
             and the token type (bearer).
     """
@@ -129,30 +132,30 @@ async def login(
         "token_type": "bearer"
     }
 
-
 @router.post("/logout", response_model=dict)
 async def logout(
     current_user: User = Depends(auth_s.get_current_user),
     db: Session = Depends(get_db),
     redis = Depends(get_redis)
 ) -> dict:
-    """Logs out the current authenticated user.
-
+    """## Logs out the current authenticated user.
+    ```
+    /api/auth/logout
+    ```
     This endpoint allows the user to log out by removing their access token
     from the Redis cache, effectively invalidating it.
 
-    Args:
+    ### Args:
         current_user (User, optional): The current authenticated user.
             Injected via `Depends(auth_s.get_current_user)`.
         db (Session, optional): The database session dependency. Injected via `Depends(get_db)`.
 
-    Returns:
+    ### Returns:
         dict: A message indicating that the user has successfully logged out.
     """
     await redis.delete(f"user_token:{current_user.id}")
     await update_token(current_user, None, db)
     return {"message": "Successfully logged out."}
-
 
 @router.get(
     '/refresh_token',
@@ -164,25 +167,27 @@ async def refresh_token(
     db: Session = Depends(get_db),
     redis = Depends(get_redis)
 ) -> TokenModel:
-    """Refreshes the JWT access and refresh tokens for a user.
-
+    """## Refreshes the JWT access and refresh tokens for a user.
+    ```
+    /api/auth/refresh_token
+    ```
     This endpoint allows a user to obtain a new pair of access and refresh tokens using
     a valid refresh token. It validates the provided refresh token, ensures it matches the one
     stored in the database, and then generates new tokens. If the refresh token is invalid or
     does not match, an error is raised.
 
-    Args:
+    ### Args:
         credentials (HTTPAuthorizationCredentials, optional): The credentials object containing
             the refresh token. This is automatically provided via dependency injection using
             the `Security` dependency with `get_refr_token`.
         db (Session, optional): The database session dependency, automatically injected by FastAPI.
 
-    Raises:
+    ### Raises:
         HTTPException: If the refresh token is invalid or does not match the one stored in
             the user's record, a 401 Unauthorized error is raised with
             the message "Invalid refresh token".
 
-    Returns:
+    ### Returns:
         TokenModel: An object containing the new access token, refresh token, a
             nd the token type (bearer).
     """
@@ -205,27 +210,28 @@ async def refresh_token(
         "token_type": "bearer"
     }
 
-
 @router.get(
     '/confirmed_email/{token}',
     dependencies=[Depends(RateLimiter(times=5, seconds=30))]
 )
 async def confirmed_email(token: str, db: Session = Depends(get_db)) -> dict:
-    """Confirm a user's email based on the provided token.
-
+    """## Confirm a user's email based on the provided token.
+    ```
+    /api/auth/confirmed_email/_token_
+    ```
     This endpoint validates the email confirmation token, checks if the user's email is
     already confirmed, and updates the confirmation status if necessary. It is rate-limited
     to 5 requests every 30 seconds to prevent abuse.
 
-    Args:
+    ### Args:
         token (str): The email confirmation token.
         db (Session, optional): The database session dependency. Defaults to Depends(get_db).
 
-    Raises:
+    ### Raises:
         HTTPException: Raised with a 400 status code if the user is not found or if the token
             is invalid.
 
-    Returns:
+    ### Returns:
         dict: A dictionary containing a confirmation message. The message is either:
             - "Email confirmed" if the confirmation was successful.
             - "Your email is already confirmed" if the email was previously confirmed.
@@ -242,7 +248,6 @@ async def confirmed_email(token: str, db: Session = Depends(get_db)) -> dict:
     await confirmed_check_toggle(email, db)
     return {"message": "App: Email confirmed"}
 
-
 @router.post(
     '/request_email',
     dependencies=[Depends(RateLimiter(times=5, seconds=30))]
@@ -253,20 +258,22 @@ async def request_email(
     request: Request,
     db: Session = Depends(get_db)
 ) -> dict:
-    """Request email confirmation for a user.
-
+    """## Request email to repeat confirmation for a user.
+    ```
+    /api/auth/request_email
+    ```
     This endpoint allows users to request a confirmation email if their email is not yet confirmed.
     If the email is already confirmed, it informs the user. The confirmation email is sent
     asynchronously using background tasks. The function is rate-limited to 5 requests every
     30 seconds.
 
-    Args:
+    ### Args:
         body (RequestEmail): The request body containing the user's email address.
         bt (BackgroundTasks): A background task manager for sending the email asynchronously.
         request (Request): The HTTP request object, used to get the base URL.
         db (Session, optional): The database session dependency. Defaults to Depends(get_db).
 
-    Returns:
+    ### Returns:
         dict: A dictionary containing a message. The message is either:
             - "Your email is already confirmed" if the email was previously confirmed.
             - "Check your email for confirmation." if the confirmation email was successfully

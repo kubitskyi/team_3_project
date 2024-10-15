@@ -1,6 +1,6 @@
 """Models"""
 from enum import Enum
-from sqlalchemy import Table, Column, Integer, String, Text, Boolean, DateTime, func, JSON, Float
+from sqlalchemy import Table, Column, Integer, String, Text, Boolean, DateTime, func, Float
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.schema import ForeignKey
@@ -8,7 +8,6 @@ from sqlalchemy.orm import relationship
 
 
 Base = declarative_base()
-
 
 photo_tag_association = Table(
     'photo_tag_association',
@@ -64,7 +63,28 @@ class User(Base):
 
 
 class Photo(Base):
+    """Represents a photo in the database.
+
+    This class defines the structure of the photos table and its relationships
+    with other entities such as users, tags, ratings, and transformations.
+
+    Attributes:
+        id (int): The unique identifier for the photo.
+        image_url (str): The URL where the photo is stored.
+        description (str, optional): A description of the photo.
+        public_id (str, optional): The public ID of the photo in external storage (e.g., Cloudinary)
+        user_id (int, optional): The ID of the user who uploaded the photo.
+        created_at (datetime): The timestamp when the photo was created.
+        updated_at (datetime, optional): The timestamp when the photo was last updated.
+        average_rating (float): The average rating of the photo.
+
+        user: Relationship to the User model
+        tags: Many-to-many relationship with tags
+        ratings: Relationship to photo ratings
+        transformations: Relationship to photo transformations
+    """
     __tablename__ = 'photos'
+
     id = Column(Integer, primary_key=True, index=True)
     image_url = Column(String, nullable=False)
     description = Column(String, nullable=True)
@@ -73,17 +93,29 @@ class Photo(Base):
     user = relationship("User", back_populates="photos")
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now(), nullable=True)
-    # Теги
     tags = relationship('Tag', secondary=photo_tag_association, back_populates="photos")
-    # Рейтинг
     average_rating = Column(Float, default=0)
     ratings = relationship('PhotoRating', back_populates='photo', cascade="all, delete")
-    # Відношення для трансформацій
-    transformations = relationship('PhotoTransformation', back_populates='photo', cascade="all, delete")
+    transformations = relationship(
+        'PhotoTransformation',
+        back_populates='photo',
+        cascade="all, delete"
+    )
 
 
 class Tag(Base):
+    """Represents a tag that can be associated with multiple photos.
+
+    This class defines the structure of the tags table and its relationships
+    with the photos table.
+
+    Attributes:
+        id (int): The unique identifier for the tag.
+        name (str): The name of the tag, which must be unique.
+        photos (List[Photo]): The list of photos associated with this tag.
+    """
     __tablename__ = 'tags'
+
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
     photos = relationship('Photo', secondary=photo_tag_association, back_populates="tags")
@@ -117,6 +149,7 @@ class Comment(Base):
         new_comment = Comment(author_id=1, post_id=2, content="Great post!", rate=5)
     """
     __tablename__ = 'comments'
+
     id = Column(Integer, primary_key=True)
     author_id = Column(ForeignKey('users.id', ondelete='CASCADE'), default=None)
     photo_id = Column(ForeignKey('photos.id', ondelete='CASCADE'), default=None)
@@ -127,21 +160,47 @@ class Comment(Base):
 
 
 class PhotoRating(Base):
+    """Represents a rating given by a user to a specific photo.
+
+    This class defines the structure of the photo_ratings table,
+    which tracks user ratings for photos.
+
+    Attributes:
+        user_id (int): The unique identifier of the user who rated the photo.
+        photo_id (int): The unique identifier of the photo being rated.
+        rating (int): The rating given by the user, must be between 1 and 5.
+        user (User): The user who provided the rating.
+        photo (Photo): The photo that received the rating.
+    """
     __tablename__ = 'photo_ratings'
+
     user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
     photo_id = Column(Integer, ForeignKey('photos.id'), primary_key=True)
-    rating = Column(Integer, nullable=False)  # Рейтинг від 1 до 5
+    rating = Column(Integer, nullable=False)
     user = relationship('User', back_populates='photo_ratings')
     photo = relationship('Photo', back_populates='ratings')
 
-    
+
 class PhotoTransformation(Base):
+    """Represents a transformation applied to a specific photo.
+
+    This class defines the structure of the photo_transformations table,
+    which stores information about different transformations (e.g., cropping,
+    scaling) applied to photos.
+
+    Attributes:
+        id (int): The unique identifier for the photo transformation.
+        original_photo_id (int): The unique identifier of the original photo.
+        photo (Photo): The original photo to which this transformation is related.
+        transformation_type (str): The type of transformation applied (e.g., crop, scale).
+        image_url (str): The URL of the transformed image.
+        created_at (datetime): The timestamp when the transformation was created.
+    """
     __tablename__ = 'photo_transformations'
-    
+
     id = Column(Integer, primary_key=True, index=True)
     original_photo_id = Column(ForeignKey('photos.id', ondelete='CASCADE'))
     photo = relationship('Photo', back_populates='transformations')
-    transformation_type = Column(String, nullable=False)  
-    # Силки
-    image_url = Column(String, nullable=False) 
+    transformation_type = Column(String, nullable=False)
+    image_url = Column(String, nullable=False)
     created_at = Column(DateTime, server_default=func.now())

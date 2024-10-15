@@ -34,7 +34,6 @@ class Auth:
     ALGORITHM = settings.algorithm
     oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
-
     def verify_password(self, plain_password, hashed_password) -> bool:
         """Verify a plain password against a hashed password.
 
@@ -58,7 +57,6 @@ class Auth:
         """
         return self.pwd_context.hash(password)
 
-
     async def create_access_token(self, data: dict, exp_delta: Optional[float] = None) -> str:
         """Create a new JWT access token.
 
@@ -71,13 +69,11 @@ class Auth:
             str: The encoded JWT access token as a string.
         """
         to_encode = data.copy()
-
         if exp_delta:
             expire = datetime.now(timezone.utc) + timedelta(seconds=exp_delta)
         else:
             expire = datetime.now(timezone.utc) + timedelta(minutes=15)
             exp_delta = 900
-
         to_encode.update(
             {
                 "iat": datetime.now(timezone.utc),
@@ -92,7 +88,6 @@ class Auth:
         )
         return encoded_access_token, exp_delta
 
-
     async def create_refresh_token(self, data: dict, exp_delta: Optional[float] = None) -> str:
         """Create a new JWT refresh token.
 
@@ -105,12 +100,10 @@ class Auth:
             str: The encoded JWT refresh token as a string.
         """
         to_encode = data.copy()
-
         if exp_delta:
             expire = datetime.now(timezone.utc) + timedelta(seconds=exp_delta)
         else:
             expire = datetime.now(timezone.utc) + timedelta(days=7)
-
         to_encode.update(
             {
                 "iat": datetime.now(timezone.utc),
@@ -125,7 +118,6 @@ class Auth:
         )
         return encoded_refresh_token
 
-
     def create_email_token(self, data: dict) -> str:
         """_summary_
 
@@ -137,7 +129,6 @@ class Auth:
         """
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + timedelta(days=3)
-
         to_encode.update(
             {
                 "iat": datetime.now(timezone.utc),
@@ -150,7 +141,6 @@ class Auth:
             algorithm=self.ALGORITHM
         )
         return mail_token
-
 
     async def decode_refresh_token(self, refresh_token: str) -> str:
         """Decode a refresh token and extract the user's email.
@@ -173,7 +163,6 @@ class Auth:
             if payload['scope'] == 'refresh_token':
                 email = payload['sub']
                 return email
-
             print(
                 "AuthServices: token is not refresh_token"
             )
@@ -187,7 +176,6 @@ class Auth:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail='AuthServices: Could not validate credentials'
             ) from e
-
 
     async def get_current_user(
         self,
@@ -216,7 +204,6 @@ class Auth:
         )
         try:
             payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
-
             if payload['scope'] == 'access_token':
                 email = payload["sub"]
                 if email is None:
@@ -225,7 +212,6 @@ class Auth:
             else:
                 print("AuthServices: token is not access_token")
                 raise credentials_exception
-
         except JWTError as e:
             print(f"JWT Error in AuthServices: {e}")
             raise credentials_exception from e
@@ -237,9 +223,7 @@ class Auth:
         token = await redis.get(f"user_token:{user.id}")
         if token is None:
             raise credentials_exception
-
         return user
-
 
     async def get_email_from_token(self, token: str):
         """Decodes the provided JWT token to extract the user's email address.
@@ -258,14 +242,12 @@ class Auth:
             payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
             email = payload["sub"]
             return email
-
         except JWTError as e:
             print(f"JWT Error in 'src.auth.auth.get_email_from_token': {e}")
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="AuthServices: Invalid token for email verification"
             ) from e
-
 
     async def check_access(
         self,
@@ -327,7 +309,6 @@ class Auth:
             detail="AuthServices: Access denied"
         )
         return True
-
 
 #  Import this to make all routers use one instanse of class
 auth_service = Auth()

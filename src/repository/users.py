@@ -18,7 +18,6 @@ async def get_user_by_email(email: str, db: Session) -> User:
     """
     return db.query(User).filter(User.email == email).first()
 
-
 async def get_user_by_name(name: str, db: Session) -> User:
     """Retrieve a user from the database by their name.
 
@@ -31,7 +30,6 @@ async def get_user_by_name(name: str, db: Session) -> User:
     """
     return db.query(User).filter(User.name == name).first()
 
-
 async def create_user(body: UserCreate, db: Session) -> User:
     """Create a new user in the database.
 
@@ -43,17 +41,13 @@ async def create_user(body: UserCreate, db: Session) -> User:
         User: The newly created user object.
     """
     new_user = User(**body.model_dump())
-    # Check if this is first user
     check = db.query(User).count()
     if not check:
         new_user.role = RoleEnum.admin
-
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-
     return new_user
-
 
 async def update_token(user: User, token: str | None, db: Session) -> None:
     """Update the refresh token of a user in the database.

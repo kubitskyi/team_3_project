@@ -27,8 +27,8 @@ on localhost at port 8000.
 """
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
-import uvicorn
 import redis.asyncio as redis
+
 from fastapi_limiter import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter
 
@@ -38,7 +38,7 @@ from src.routes import auth, transformations, users, posts, comments
 r = None
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app_: FastAPI):
     """Define the lifespan of the FastAPI application.
 
     This function manages the lifecycle of the FastAPI application, initializing and closing
@@ -62,7 +62,7 @@ async def lifespan(app: FastAPI):
         ssl=True
     )
     await FastAPILimiter.init(r)
-    app.state.redis = r
+    app_.state.redis = r
     yield
     await r.close()
 
@@ -70,14 +70,14 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="PixnTalk",
     lifespan=lifespan,
-    description="PixnTalk is a social networking platform designed to enhance user interaction \
-        and engagement through dynamic features. Users can create accounts, manage their profiles, \
+    description="**PixnTalk** is a social networking platform designed to enhance user interaction \
+        and engagement through dynamic features.\n\nUsers can create accounts, manage their \
         and participate in discussions via posts and comments. The app allows users to upload \
-        and save profile photos to Cloudinary, ensuring efficient storage and retrieval. \
-        Additionally, PixnTalk includes a photo rating system, enabling users to rate and \
+        profiles, and save profile photos to Cloudinary, ensuring efficient storage and retrieval. \
+        \n\nAdditionally, PixnTalk includes a photo rating system, enabling users to rate and \
         appreciate each other's uploads. With robust role-based access controls and a focus on \
         community moderation, PixnTalk fosters a secure and vibrant environment for users to \
-        connect and share. Built on FastAPI, the application offers high performance and \
+        connect and share. \n\nBuilt on FastAPI, the application offers high performance and \
         responsiveness, while Redis is utilized for effective rate limiting and data management."
 )
 
@@ -90,15 +90,5 @@ app.include_router(transformations.router, prefix='/api')
 
 @app.get("/", tags=['Helthcheck'], dependencies=[Depends(RateLimiter(times=5, seconds=30))])
 def read_root():
-    """Healthchecker"""
+    """## Healthchecker"""
     return {"message": "PixnTalk API is alive"}
-
-
-if __name__ == "__main__":
-    # uvicorn.run(
-    #     "main:app",
-    #     host="localhost",
-    #     port=8000,
-    #     reload=True
-    # )
-    pass

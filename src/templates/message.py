@@ -1,3 +1,4 @@
+"""Templates for messages"""
 OWNER_CHECK_ERROR_MSG =  "You are not the owner of the photo"
 COMMENT_NOT_FOUND = "Comment not found"
 COMMENT_DEL = "Comment deleted successfully"

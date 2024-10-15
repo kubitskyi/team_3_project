@@ -24,6 +24,25 @@ class UserCreate(BaseModel):
 
 
 class UserPublic(BaseModel):
+    """Public model for user data.
+
+    This model represents the publicly visible information of a user, including their
+    name, account creation date, online status, and other user-related statistics. This
+    model is useful for displaying user profiles or public user data in the system.
+
+    Args:
+        BaseModel (Pydantic BaseModel): The base model class provided by Pydantic.
+
+    Attributes:
+        name (str): The user's display name.
+        created_at (datetime): The date and time when the user's account was created.
+        is_online (bool): Indicates whether the user is currently online.
+        avatar (str | None): The URL of the user's avatar image, or None if not set.
+        photo_count (int): The total number of photos uploaded by the user.
+        comment_count (int): The total number of comments made by the user.
+        role (str): The user's role in the system (e.g., "user", "admin").
+        about (str | None): A brief description or bio provided by the user, or None if not set.
+    """
     name: str
     created_at: datetime
     is_online: bool
@@ -34,7 +53,11 @@ class UserPublic(BaseModel):
     about: str | None
 
     class Config:
-        """Tells pydantic to convert even non-dict objects to json."""
+        """Pydantic configuration.
+
+        This configuration setting ensures that the model can be populated from ORM objects,
+        allowing the model to interact with database records easily.
+        """
         from_attributes = True
 
 
