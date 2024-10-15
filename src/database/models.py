@@ -131,13 +131,12 @@ class Comment(Base):
     Attributes:
         id (int): Unique identifier for the comment.
         author_id (int): Foreign key referencing the User who made the comment.
-        post_id (int): Foreign key referencing the Post that this comment is associated with.
+        photo_id (int): Foreign key referencing the Post that this comment is associated with.
         content (str): The text content of the comment (optional).
-        rate (int): Rating given to the comment (optional).
         is_active (bool): Flag indicating whether the comment is active. Default is False.
         created_at (datetime): Timestamp for when the comment was created. Automatically set
             to the current time.
-        modified (datetime): Timestamp for when the comment was last modified. Automatically
+        updated_at (datetime): Timestamp for when the comment was last modified. Automatically
             updated to the current time.
 
     Relationships:

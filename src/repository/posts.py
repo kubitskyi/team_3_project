@@ -40,15 +40,15 @@ def create_photo(
         PhotoResponse: The response model containing the created photo details.
     """
     if not current_user:
-        raise HTTPException(status_code=403, detail="Not autorized")
+        raise HTTPException(status_code=403, detail="Not authorized")
 
     new_photo = Photo(
         image_url=photo_url,
         description=description,
-        user_id = current_user.id,
+        user_id=current_user.id,
         tags=tags,
-        public_id = public_id,
-        updated_at = func.now()
+        public_id=public_id,
+        updated_at=func.now()
         )
     db.add(new_photo)
     db.commit()
@@ -64,6 +64,7 @@ def create_photo(
         updated_at=new_photo.updated_at
     )
     return response_data
+
 
 def delete_photo(photo_id: int, db: Session):
     """Delete a photo from the database and Cloudinary.
@@ -95,6 +96,7 @@ def delete_photo(photo_id: int, db: Session):
         db.commit()
     return {"message": "Photo deleted"}
 
+
 def update_photo(photo_id: int, description: str, tags: List[str], db: Session):
     """Update the details of a photo.
 
@@ -125,12 +127,13 @@ def update_photo(photo_id: int, description: str, tags: List[str], db: Session):
         tag = Tag(name=tag_name, photo_id=photo_id)
         db.add(tag)
     db.commit()
-    response_data =  {
+    response_data = {
         "description": photo.description,
         "image_url": photo.image_url,
         "tags": [tag.name for tag in photo.tags]
     }
     return response_data
+
 
 def get_photo(photo_id: int, db: Session):
     """Retrieve a photo by its ID.
@@ -163,6 +166,7 @@ def get_photo(photo_id: int, db: Session):
         updated_at=photo.updated_at
     )
     return response_data
+
 
 def add_rate(user, photo_id, rate, db: Session):
     """Add or update a rating for a specific photo by a user.
@@ -200,6 +204,7 @@ def add_rate(user, photo_id, rate, db: Session):
     db.refresh(db_rating)
     update_photo_average_rating(photo_id, db)
     return SUCCESSFUL_ADD_RATE
+
 
 def update_photo_average_rating(photo_id: int, db: Session):
     """Update the average rating of a photo based on its associated ratings.

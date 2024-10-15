@@ -55,6 +55,7 @@ class PhotoResponse(PhotoBase):
     created_at: datetime
     updated_at: datetime
 
+
 class PhotoUpdate(PhotoBase):
     """Model for updating an existing photo.
 

@@ -28,6 +28,7 @@ def create_comment(db: Session, author_id: int, photo_id: int, comment: CommentC
     db.refresh(db_comment)
     return db_comment
 
+
 def update_comment(db: Session, comment_id: int, author_id: int, comment: CommentUpdate):
     """Update an existing comment.
 
@@ -55,6 +56,7 @@ def update_comment(db: Session, comment_id: int, author_id: int, comment: Commen
     db.refresh(db_comment)
     return db_comment
 
+
 def delete_comment(db: Session, comment_id: int):
     """Delete a comment by its ID.
 
@@ -74,6 +76,7 @@ def delete_comment(db: Session, comment_id: int):
     db.delete(db_comment)
     db.commit()
     return {"detail": COMMENT_DEL}
+
 
 def get_comments_by_photo(db: Session, photo_id: int):
     """Retrieve all comments associated with a specific photo.

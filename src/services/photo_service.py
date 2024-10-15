@@ -8,13 +8,13 @@ from fastapi import HTTPException
 
 from src.conf.config import settings
 
-
 cloudinary_config = cloudinary.config(
-    cloud_name = settings.cloudinary_name,
-    api_key = settings.cloudinary_api_key,
-    api_secret = settings.cloudinary_api_secret,
-    secure = settings.cloudinary_secure
+    cloud_name=settings.cloudinary_name,
+    api_key=settings.cloudinary_api_key,
+    api_secret=settings.cloudinary_api_secret,
+    secure=settings.cloudinary_secure
 )
+
 
 def upload_file(file) -> tuple[str, str]:
     """Upload a file to Cloudinary and return its URL and public ID.
@@ -42,6 +42,7 @@ def upload_file(file) -> tuple[str, str]:
         ) from e
     return upload_result['url'], upload_result['public_id']
 
+
 def delete_image(public_id: str) -> bool:
     """Delete an image from Cloudinary.
 
@@ -58,6 +59,7 @@ def delete_image(public_id: str) -> bool:
     if response["result"] == "ok":
         return True
     return False
+
 
 def crop_and_scale(public_id: str, width: int, height: int) -> str:
     """Crop and scale an image stored on Cloudinary.
@@ -80,9 +82,9 @@ def crop_and_scale(public_id: str, width: int, height: int) -> str:
         height=height,
         crop="fill"
     )
-    return transformed_image+".jpg"
+    return transformed_image + ".jpg"
 
-#======================= TO DO =========================
+# ======================= TO DO =========================
 
 # def add_text_overlay(image_public_id, text, font_size=30, color="white"):
 #     transformed_image = cloudinary.CloudinaryImage(image_public_id).build_url(

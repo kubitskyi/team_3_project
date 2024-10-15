@@ -35,6 +35,7 @@ class CropAndScaleRequest(BaseModel):
             }
         }
 
+
 class PhotoTransformationResponse(BaseModel):
     """Response model for photo transformations.
 

@@ -14,7 +14,7 @@ from src.repository.users import (
 )
 
 
-router = APIRouter(prefix='/auth', tags=["Authentification"])
+router = APIRouter(prefix='/auth', tags=["Authentication"])
 get_refr_token = HTTPBearer()
 
 
@@ -66,6 +66,7 @@ async def signup(
         "user": new_user,
         "detail": "User successfully created. Check your email for confirmation."
     }
+
 
 @router.post(
     "/login",
@@ -132,6 +133,7 @@ async def login(
         "token_type": "bearer"
     }
 
+
 @router.post("/logout", response_model=dict)
 async def logout(
     current_user: User = Depends(auth_s.get_current_user),
@@ -156,6 +158,7 @@ async def logout(
     await redis.delete(f"user_token:{current_user.id}")
     await update_token(current_user, None, db)
     return {"message": "Successfully logged out."}
+
 
 @router.get(
     '/refresh_token',
@@ -210,6 +213,7 @@ async def refresh_token(
         "token_type": "bearer"
     }
 
+
 @router.get(
     '/confirmed_email/{token}',
     dependencies=[Depends(RateLimiter(times=5, seconds=30))]
@@ -247,6 +251,7 @@ async def confirmed_email(token: str, db: Session = Depends(get_db)) -> dict:
         return {"message": "UserRouter: Your email is already confirmed"}
     await confirmed_check_toggle(email, db)
     return {"message": "App: Email confirmed"}
+
 
 @router.post(
     '/request_email',

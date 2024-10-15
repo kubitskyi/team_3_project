@@ -22,6 +22,7 @@ conf = ConnectionConfig(
     TEMPLATE_FOLDER=Path(__file__).parent.parent / 'templates',
 )
 
+
 async def send_email(email: EmailStr, username: str, host: str) -> None:
     """Send a verification email to the user.
 

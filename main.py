@@ -37,6 +37,7 @@ from src.routes import auth, transformations, users, posts, comments
 
 r = None
 
+
 @asynccontextmanager
 async def lifespan(app_: FastAPI):
     """Define the lifespan of the FastAPI application.
@@ -45,7 +46,7 @@ async def lifespan(app_: FastAPI):
     resources such as Redis and FastAPILimiter during the app's lifespan.
 
     Args:
-        app (FastAPI): The FastAPI application instance.
+        app_ (FastAPI): The FastAPI application instance.
 
     Yields:
         Allows the FastAPI application to run within this context, managing resources.
@@ -88,7 +89,7 @@ app.include_router(comments.router, prefix='/api')
 app.include_router(transformations.router, prefix='/api')
 
 
-@app.get("/", tags=['Helthcheck'], dependencies=[Depends(RateLimiter(times=5, seconds=30))])
+@app.get("/", tags=['Healthcheck'], dependencies=[Depends(RateLimiter(times=5, seconds=30))])
 def read_root():
     """## Healthchecker"""
     return {"message": "PixnTalk API is alive"}

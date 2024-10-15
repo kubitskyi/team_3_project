@@ -57,7 +57,7 @@ class Auth:
         """
         return self.pwd_context.hash(password)
 
-    async def create_access_token(self, data: dict, exp_delta: Optional[float] = None) -> str:
+    async def create_access_token(self, data: dict, exp_delta: Optional[float] = None) -> tuple[str, int]:
         """Create a new JWT access token.
 
         Args:
@@ -67,6 +67,7 @@ class Auth:
 
         Returns:
             str: The encoded JWT access token as a string.
+            int: Exp. time for key
         """
         to_encode = data.copy()
         if exp_delta:
@@ -119,13 +120,17 @@ class Auth:
         return encoded_refresh_token
 
     def create_email_token(self, data: dict) -> str:
-        """_summary_
+        """Create a JWT token for email verification.
 
         Args:
-            data (dict): _description_
+            data (dict): A dictionary containing user data to encode in the token.
+                Typically, includes user identifiers, such as 'sub' (subject).
 
         Returns:
-            str: _description_
+            str: The encoded JWT token as a string.
+
+        Raises:
+            Exception: Raises an exception if the encoding process fails.
         """
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + timedelta(days=3)
@@ -178,17 +183,18 @@ class Auth:
             ) from e
 
     async def get_current_user(
-        self,
-        token: str = Depends(oauth2_scheme),
-        db: Session = Depends(get_db),
-        redis = Depends(get_redis)
+            self,
+            token: str = Depends(oauth2_scheme),
+            db: Session = Depends(get_db),
+            redis=Depends(get_redis)
     ) -> User:
         """Retrieve the current authenticated user based on the provided access token.
 
         Args:
             token (str, optional): The access token extracted from the request.
-                Defaults to Depends(oauth2_scheme).
+                Defaults to Depends on(oauth2_scheme).
             db (Session, optional): The database session. Defaults to Depends(get_db).
+            redis: Redis session.
 
         Raises:
             HTTPException: If the token is invalid, expired, the user cannot be found or is
@@ -250,10 +256,10 @@ class Auth:
             ) from e
 
     async def check_access(
-        self,
-        user: User,
-        owner_id: int
-) -> True:
+            self,
+            user: User,
+            owner_id: int
+    ) -> True:
         """Check if the user has access to a resource.
 
         This function checks whether a user has access to a resource based on their
@@ -274,16 +280,15 @@ class Auth:
         """
         if user.id != owner_id and user.role not in [RoleEnum.moderator, RoleEnum.admin]:
             raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="AuthServices: Access denied"
-        )
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="AuthServices: Access denied"
+            )
         return True
 
-
     async def check_admin(
-        self,
-        user: User,
-        allowed_roles: list|None = None
+            self,
+            user: User,
+            allowed_roles: list | None = None
     ) -> True:
         """Checks if the user has one of the allowed roles.
 
@@ -305,10 +310,11 @@ class Auth:
             allowed_roles = [RoleEnum.moderator, RoleEnum.admin]
         if user.role not in allowed_roles:
             raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="AuthServices: Access denied"
-        )
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="AuthServices: Access denied"
+            )
         return True
 
-#  Import this to make all routers use one instanse of class
+
+#  Import this to make all routers use one instance of class
 auth_service = Auth()

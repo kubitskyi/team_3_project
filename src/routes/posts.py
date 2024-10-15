@@ -75,6 +75,7 @@ async def upload_photo(
     )
     return new_photo
 
+
 @router.delete("/photo/{photo_id}", response_model=dict)
 async def delete_photo(
     photo_id: int,
@@ -111,6 +112,7 @@ async def delete_photo(
         status_code=status.HTTP_400_BAD_REQUEST,
         detail=NOT_AUTH,
     )
+
 
 @router.put("/photo/{photo_id}", response_model=PhotoUpdate)
 async def update_photo(
@@ -177,6 +179,7 @@ async def update_photo(
         detail=NOT_AUTH,
     )
 
+
 @router.get("/photo/{photo_id}", response_model=PhotoResponse)
 async def get_photo(photo_id: int, db: Session = Depends(get_db)):
     """## Retrieves a photo by its ID.
@@ -199,6 +202,7 @@ async def get_photo(photo_id: int, db: Session = Depends(get_db)):
         HTTPException: If the photo does not exist, a 404 Not Found error is raised.
     """
     return posts_crud.get_photo(photo_id, db)
+
 
 @router.post("/photo/{photo_id}/rate", response_model=dict)
 async def add_rate(

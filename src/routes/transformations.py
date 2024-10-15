@@ -13,6 +13,7 @@ from src.templates.message import OWNER_CHECK_ERROR_MSG
 
 router = APIRouter(prefix="/img-service", tags=["Image service"])
 
+
 @router.post("/crop_and_scale/{photo_id}")
 def transform_image(
     body: CropAndScaleRequest,
@@ -41,7 +42,6 @@ def transform_image(
         `HTTPException`: If the user does not own the photo or if the photo is not found in
             the database.
     """
-
     photo_id = body.photo_id
     photo = db.query(Photo).filter(Photo.id == photo_id).first()
     if photo.user_id == current_user.id:

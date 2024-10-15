@@ -46,6 +46,7 @@ def create_new_comment(
     """
     return create_comment(db, author_id=current_user.id, photo_id=photo_id, comment=comment)
 
+
 @router.put("/{comment_id}", response_model=CommentResponse)
 def update_existing_comment(
     comment_id: int,
@@ -78,6 +79,7 @@ def update_existing_comment(
         an error will be raised.
     """
     return update_comment(db, comment_id=comment_id, author_id=current_user.id, comment=comment)
+
 
 @router.delete("/{comment_id}", response_model=dict)
 def delete_existing_comment(
@@ -112,6 +114,7 @@ def delete_existing_comment(
         status_code=status.HTTP_400_BAD_REQUEST,
         detail=DELETE_COMMENT_ACCESS_ERROR
     )
+
 
 @router.get("/post/{photo_id}", response_model=List[CommentResponse])
 def get_comments_for_photo(photo_id: int, db: Session = Depends(get_db)):

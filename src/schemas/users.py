@@ -12,7 +12,7 @@ class UserCreate(BaseModel):
         BaseModel (Pydantic BaseModel): The base class for creating data models.
 
     Attributes:
-        username (str): The username of the user, with a minimum length of 5 and
+        name (str): The username of the user, with a minimum length of 5 and
             a maximum length of 20 characters.
         email (EmailStr): The user's email address, validated as a proper email format.
         password (str): The user's password, with a minimum length of 8 and
@@ -69,7 +69,6 @@ class UserReturn(UserPublic):
 
     Attributes:
         id (int): The unique identifier of the user.
-        username (str): The username of the user.
         email (EmailStr): The email address of the user.
         created_at (datetime): The datetime when the user was created.
 

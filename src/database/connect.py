@@ -24,6 +24,7 @@ Base.metadata.create_all(engine)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 def get_db():
     """Dependency"""
     db = SessionLocal()
@@ -32,12 +33,13 @@ def get_db():
     finally:
         db.close()
 
+
 def get_redis(request: Request):
     """Redis init from request"""
     return request.app.state.redis
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     try:
         with engine.connect() as connection:
             print("Connection successful!")

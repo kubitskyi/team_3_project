@@ -53,6 +53,7 @@ async def read_user_public(
     user.is_online = bool(token)
     return user
 
+
 @router.get("/profile", response_model=UserReturn)
 async def read_user_profile(
     username: str,
@@ -86,6 +87,7 @@ async def read_user_profile(
         owner.is_online = bool(token)
         return owner
 
+
 @router.patch('/avatar', response_model=UserReturn)
 async def update_avatar_user(
     file: UploadFile = File(),
@@ -114,6 +116,7 @@ async def update_avatar_user(
     user = await update_avatar(current_user, src_url, db)
     return user
 
+
 @router.patch('/about', response_model=UserReturn)
 async def update_about_user(
     text: str,
@@ -140,6 +143,7 @@ async def update_about_user(
     """
     user = await update_about(current_user, text, db)
     return user
+
 
 @router.delete('/avatar', response_model=dict)
 async def delete_avatar_user(
@@ -178,6 +182,7 @@ async def delete_avatar_user(
         await delete_avatar(owner, db)
         return {"message": "Avatar deleted."}
 
+
 @router.delete('/about', response_model=dict)
 async def delete_about_user(
     username: str,
@@ -208,6 +213,7 @@ async def delete_about_user(
     if check:
         await delete_about(owner, db)
         return {"message": "Info about deleted."}
+
 
 @router.patch('/admin/change_role', response_model=dict)
 async def change_user_role(
@@ -249,6 +255,7 @@ async def change_user_role(
                 return {"message": "Role can't be changed. You are last Admin."}
             await change_role(user, new_role, db)
             return {"message": f"Role changed to {new_role}."}
+
 
 @router.patch('/admin/ban-unban', response_model=dict)
 async def ban_user(

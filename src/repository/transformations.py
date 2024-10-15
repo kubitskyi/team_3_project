@@ -13,7 +13,7 @@ def add_transform_image(image_url, type, original_photo_id, db: Session,):
 
     Args:
         image_url (str): The URL of the transformed image.
-        transformation_type (str): The type of transformation applied (e.g., crop, scale).
+        type (str): The type of transformation applied (e.g., crop, scale).
         original_photo_id (int): The ID of the original photo being transformed.
         db (Session): The database session for executing queries.
 
@@ -23,16 +23,16 @@ def add_transform_image(image_url, type, original_photo_id, db: Session,):
     new_photo = PhotoTransformation(
         original_photo_id=original_photo_id,
         transformation_type=type,
-        image_url = image_url
+        image_url=image_url
         )
     db.add(new_photo)
     db.commit()
     db.refresh(new_photo)
     response = PhotoTransformationResponse(
-        id = new_photo.id,
-        original_photo_id = new_photo.original_photo_id,
-        transformation_type = new_photo.transformation_type,
-        image_url = new_photo.image_url,
-        created_at = new_photo.created_at
+        id=new_photo.id,
+        original_photo_id=new_photo.original_photo_id,
+        transformation_type=new_photo.transformation_type,
+        image_url=new_photo.image_url,
+        created_at=new_photo.created_at
         )
     return response
