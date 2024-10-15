@@ -65,7 +65,7 @@ def delete_photo(photo_id: int, db: Session):
     return {"message": "Фото удалено"}
 
 
-def update_photo(photo_id: int, description: str, tags: List[str], db: Session):
+def update_photo(photo_id: int, description: str, tags: List[Tag], db: Session):
     # Поиск фотографии по ID
     photo = db.query(Photo).filter(Photo.id == photo_id).first()
 
@@ -75,16 +75,11 @@ def update_photo(photo_id: int, description: str, tags: List[str], db: Session):
     # Обновление описания фото
     photo.description = description
     photo.tags = tags
-
-    # Обновление тегов
-    db.query(Tag).filter(Tag.photo_id == photo_id).delete()  # Удаляем старые теги
-    for tag_name in tags:
-        tag = Tag(name=tag_name, photo_id=photo_id)
-        db.add(tag)
-
     db.commit()
+    db.refresh(photo)
     
     response_data =  {
+        "id": photo.id,
         "description": photo.description,
         "image_url": photo.image_url,
         "tags": [tag.name for tag in photo.tags]

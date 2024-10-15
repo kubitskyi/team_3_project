@@ -7,6 +7,7 @@ from src.database.connect import  get_db
 from src.database.models import  User, Tag, Photo
 from src.schemas.posts import PhotoResponse, PhotoCreate, PhotoUpdate
 from src.repository import posts as posts_crud
+from src.repository.tags import create_tag
 from src.services.photo_service import  upload_file
 from src.services.auth import auth_service
 from src.templates.message import TO_MANY_TAGS, NOT_AUTH, SUCCESSFUL_ADD_RATE
@@ -149,10 +150,31 @@ async def update_photo(
     Returns:
         PhotoUpdate: The updated photo object containing the new description and tags.
     """
-    if not tags:
-        tags = []
+    
+    print("===="*20)
+    print(tags)
     photo = db.query(Photo).filter(Photo.id == photo_id).one_or_none()
+    
     if  auth_service.check_access(user = current_user.id, owner_id=photo.user_id):
+    # ===================== old ==================
+        # if not tags:
+        #     new_tags = []
+        # if len(tags) > 5:
+        #     raise HTTPException(
+        #         status.HTTP_400_BAD_REQUEST,
+        #         detail=TO_MANY_TAGS
+        #     )
+    
+        # new_tags = []
+        # for tag in tags:
+        #     new_tag = create_tag(tag_name=tag, db=db)
+        #     new_tags.append(new_tag)
+        # ==================
+        
+        if not tags:
+            tags = []
+   
+
         tags_list = []
         if len(tags) > 0:
             tags_list = tags[0].split(",")
@@ -162,6 +184,7 @@ async def update_photo(
                 status.HTTP_400_BAD_REQUEST,
                 detail=TO_MANY_TAGS
             )
+
         tags = []
         for tag in tags_list:
             new_tag = db.query(Tag).filter(Tag.name==tag).one_or_none()
@@ -169,10 +192,10 @@ async def update_photo(
                 new_tag = Tag(name=tag)
                 db.add(new_tag)
                 db.commit()
-                print("%"*30)
-                print(new_tag.id)
             tags.append(new_tag)
-        return posts_crud.update_photo(photo_id, description, tags, db)
+        
+        result = posts_crud.update_photo(photo_id=photo_id, description=description, tags=new_tags, db=db)
+        return result
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
         detail=NOT_AUTH,
