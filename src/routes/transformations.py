@@ -58,9 +58,30 @@ def transform_image(
 
 
 @router.post("/get-qrcode-link/{photo_id}")
-def get_qrcode_link(photo_id, db: Session = Depends(get_db)):
+def get_qrcode_link(photo_id, db: Session = Depends(get_db),current_user: User = Depends(auth_s.get_current_user)):
+    """
+    Generates a QR code link for the image associated with the given photo_id.
+
+    - Verifies if the current user is the owner of the photo.
+    - If the check passes, it generates a QR code for the image URL.
+    - Returns the QR code in PNG format.
+
+    Args:
+        photo_id (int): The identifier of the transformed photo.
+        db (Session): Database session provided through dependency injection.
+        current_user (User): The currently authenticated user provided through dependency injection.
+
+    Raises:
+        HTTPException: If the user is not the owner of the photo or if there is an error generating the QR code.
+
+    Returns:
+        StreamingResponse: The QR code image in PNG format.
+    """
+    photo = db.query(PhotoTransformation).filter(PhotoTransformation.id == photo_id).first()
+    original_photo = db.query(Photo).filter(Photo.id == photo.original_photo_id).first()
+    if current_user.id != original_photo.user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail=OWNER_CHECK_ERROR_MSG)
     try:
-        photo = db.query(PhotoTransformation).filter(PhotoTransformation.id == photo_id).first()
         response = generate_qr_code(photo.image_url)
         return StreamingResponse(response, media_type="image/png")
     except Exception as e:
