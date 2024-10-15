@@ -2,12 +2,12 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
-from src.database.models import Comment
+from src.database.models import Comment, User
 from src.schemas.comments import CommentCreate, CommentUpdate
 from src.templates.message import COMMENT_NOT_FOUND, COMMENT_DEL
 
 
-def create_comment(db: Session, author_id: int, photo_id: int, comment: CommentCreate):
+def create_comment(db: Session, author: User, photo_id: int, comment: CommentCreate):
     """Create a new comment associated with a specific photo.
 
     Args:
@@ -22,8 +22,9 @@ def create_comment(db: Session, author_id: int, photo_id: int, comment: CommentC
     Raises:
         HTTPException: If there is an error during the creation process.
     """
-    db_comment = Comment(author_id=author_id, photo_id=photo_id, **comment.model_dump())
+    db_comment = Comment(author_id=author.id, photo_id=photo_id, **comment.model_dump())
     db.add(db_comment)
+    author.comment_count += 1
     db.commit()
     db.refresh(db_comment)
     return db_comment
@@ -35,7 +36,7 @@ def update_comment(db: Session, comment_id: int, author_id: int, comment: Commen
     Args:
         db (Session): The database session used for interacting with the database.
         comment_id (int): The ID of the comment to be updated.
-        author_id (int): The ID of the user who owns the comment.
+        author (User): The user who owns the comment.
         comment (CommentUpdate): The updated comment data.
 
     Returns:

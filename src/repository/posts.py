@@ -51,6 +51,7 @@ def create_photo(
         updated_at=func.now()
         )
     db.add(new_photo)
+    current_user.photo_count += 1
     db.commit()
     db.refresh(new_photo)
     response_data = PhotoResponse(

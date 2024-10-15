@@ -44,7 +44,7 @@ def create_new_comment(
         CommentResponse: An object containing the newly created comment's details, such as the
         comment content, author, and the associated photo.
     """
-    return create_comment(db, author_id=current_user.id, photo_id=photo_id, comment=comment)
+    return create_comment(db, author=current_user, photo_id=photo_id, comment=comment)
 
 
 @router.put("/{comment_id}", response_model=CommentResponse)
