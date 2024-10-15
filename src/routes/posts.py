@@ -174,7 +174,6 @@ async def update_photo(
         if not tags:
             tags = []
    
-
         tags_list = []
         if len(tags) > 0:
             tags_list = tags[0].split(",")
@@ -194,7 +193,7 @@ async def update_photo(
                 db.commit()
             tags.append(new_tag)
         
-        result = posts_crud.update_photo(photo_id=photo_id, description=description, tags=new_tags, db=db)
+        result = posts_crud.update_photo(photo_id=photo_id, description=description, tags=tags, db=db)
         return result
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
