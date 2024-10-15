@@ -27,6 +27,7 @@ def validate_role(role: str) -> str:
             detail="UserServices: Invalid role"
         ) from e
 
+
 async def upload_avatar(user: User, file: UploadFile):
     """Uploads the user's avatar image to Cloudinary, and returns a URL for the uploaded image.
 
@@ -51,6 +52,7 @@ async def upload_avatar(user: User, file: UploadFile):
         version=r.get('version')
     )
     return src_url
+
 
 async def remove_avatar(user: User):
     """Removes the user's avatar from Cloudinary.
