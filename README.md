@@ -27,7 +27,7 @@ poetry install
 ```
 or
 ```
-pip install requirements
+pip install -r requirements.txt
 ```
 
 3. Create file .env and write credentials as it shown in .env.exam
