@@ -25,6 +25,10 @@ source .venv/bin/activate
 ```
 poetry install
 ```
+or
+```
+pip install requirements
+```
 
 3. Create file .env and write credentials as it shown in .env.exam
 
