@@ -39,7 +39,6 @@ r = None
 
 @asynccontextmanager
 async def lifespan(app_: FastAPI):
-
     """Define the lifespan of the FastAPI application.
 
     This function manages the lifecycle of the FastAPI application, initializing and closing
@@ -60,7 +59,7 @@ async def lifespan(app_: FastAPI):
         db=0,
         encoding="utf-8",
         decode_responses=True,
-        ssl=True
+        ssl=settings.redis_ssl
     )
     await FastAPILimiter.init(r)
     app_.state.redis = r
@@ -93,4 +92,3 @@ app.include_router(transformations.router, prefix='/api')
 def read_root():
     """## Healthchecker"""
     return {"message": "PixnTalk API is alive"}
-

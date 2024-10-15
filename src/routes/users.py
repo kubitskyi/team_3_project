@@ -9,7 +9,7 @@ from src.database.models import User, RoleEnum
 from src.routes.auth import get_redis
 from src.services.auth import auth_service as auth_s
 from src.services.users import upload_avatar, remove_avatar
-from src.schemas.users import UserReturn, UserPublic
+from src.schemas.users import UserReturn
 from src.repository.users import (
     get_user_by_name, update_avatar, delete_avatar, ban_unban, change_role,
     update_about, delete_about, count_admins
@@ -22,7 +22,7 @@ get_refr_token = HTTPBearer()
 
 @router.get(
     "/{username}",
-    response_model=UserPublic,
+    response_model=UserReturn,
     dependencies=[Depends(RateLimiter(times=5, seconds=30))]
 )
 async def read_user_public(
@@ -52,40 +52,6 @@ async def read_user_public(
     token = await redis.get(f"user_token:{user.id}")
     user.is_online = bool(token)
     return user
-
-
-@router.get("/profile", response_model=UserReturn)
-async def read_user_profile(
-    username: str,
-    current_user: User = Depends(auth_s.get_current_user),
-    db: Session = Depends(get_db),
-    redis = Depends(get_redis)
-) -> UserReturn:
-    """## User's full profile
-    ```
-    /api/user/profile
-    ```
-    Retrieves the profile of a specified user if the current user has access rights and
-    returns the user's full profile, including their online status.
-
-    ### Args:
-        username (str): The username of the user whose profile is to be retrieved.
-        current_user (User, optional): The currently authenticated user, used to check access
-            rights. Defaults to Depends(auth_s.get_current_user).
-        db (Session, optional): The database session used to query user data. Defaults to
-            Depends(get_db).
-        redis (_type_, optional): Redis instance used to check if the user is online. Defaults to
-            Depends(get_redis).
-
-    ### Returns:
-        UserReturn: The full profile of the user, including whether they are online.
-    """
-    owner = await get_user_by_name(username, db)
-    check = await auth_s.check_access(current_user, owner.id)
-    if check:
-        token = await redis.get(f"user_token:{owner.id}")
-        owner.is_online = bool(token)
-        return owner
 
 
 @router.patch('/avatar', response_model=UserReturn)
