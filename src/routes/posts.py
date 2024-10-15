@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from src.database.connect import  get_db
 from src.database.models import  User, Tag, Photo
-from src.schemas.posts import PhotoResponse, PhotoCreate, PhotoUpdate
+from src.schemas.posts import PhotoResponse, PhotoUpdate
 from src.repository import posts as posts_crud
 from src.services.photo_service import  upload_file
 from src.services.auth import auth_service
@@ -23,13 +23,15 @@ async def upload_photo(
     tags: List[str] | None = None,
     current_user: User = Depends(auth_service.get_current_user)
 ):
-    """Uploads a photo to Cloudinary, associates it with the current user, and optionally tags it.
-
+    """## Uploads a photo to Cloudinary, connects it with the current user, and optionally tags it.
+    ```
+    /api/posts/photo
+    ```
     This endpoint allows a user to upload a photo, which is saved in Cloudinary. The user can also
     provide a description and up to 5 tags that categorize the photo. If any of the tags do not
     exist, they will be created in the database.
 
-    Args:
+    ### Args:
         file (UploadFile, optional): The image file to be uploaded. Required.
         description (str, optional): A description for the photo. Defaults to "No description".
         db (Session, optional): The database session used to interact with the database.
@@ -39,27 +41,24 @@ async def upload_photo(
         current_user (User, optional): The currently authenticated user uploading the photo.
             Defaults to Depends(auth_service.get_current_user).
 
-    Raises:
+    ### Raises:
         HTTPException: Raised with status 400 if more than 5 tags are provided.
 
-    Returns:
+    ### Returns:
         PhotoCreate: The newly created photo object containing the photo URL, public ID,
             description, and tags.
     """
     if not tags:
         tags = []
     photo_url, public_id = upload_file(file)
-
     tags_list = []
     if len(tags) > 0:
         tags_list = tags[0].split(",")
-
     if len(tags_list) > 5:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
             detail=TO_MANY_TAGS
         )
-
     tags = []
     for tag in tags_list:
         new_tag = db.query(Tag).filter(Tag.name==tag).one_or_none()
@@ -68,7 +67,6 @@ async def upload_photo(
             db.add(new_tag)
             db.commit()
         tags.append(new_tag)
-
     new_photo = posts_crud.create_photo(
         db=db,
         photo_url=photo_url,
@@ -84,24 +82,26 @@ async def delete_photo(
     db: Session = Depends(get_db),
     current_user: User = Depends(auth_service.get_current_user)
 ):
-    """Deletes a photo by its ID if the current user is authorized.
-
+    """## Deletes a photo by its ID if the current user is authorized.
+    ```
+    /api/posts/photo/_photo_id_
+    ```
     This endpoint allows a user to delete a photo they own. If the current user is the owner of the
     photo, moderator or admin, the photo is removed from the database. Otherwise, a
     `400 Bad Request` is raised due to insufficient authorization.
 
-    Args:
+    ### Args:
         photo_id (int): The ID of the photo to be deleted.
         db (Session, optional): The database session for querying and deleting the photo.
             Defaults to Depends(get_db).
         current_user (User, optional): The currently authenticated user trying to delete the photo.
             Defaults to Depends(auth_service.get_current_user).
 
-    Raises:
+    ### Raises:
         HTTPException: Raised with status 400 if the user is not authorized to delete the photo,
             or if the photo does not exist.
 
-    Returns:
+    ### Returns:
         dict: A dictionary confirming that the photo has been successfully deleted, or
             appropriate error messages.
     """
@@ -122,15 +122,17 @@ async def update_photo(
     tags: List[str] | None = None,
     current_user: User = Depends(auth_service.get_current_user)
 ):
-    """Updates a photo's description and tags if the current user is authorized.
-
+    """## Updates a photo's description and tags if the current user is authorized.
+    ```
+    /api/posts/photo_photo_id_
+    ```
     This endpoint allows the owner of a photo, admin and moderator to update its description and
     associated tags. If the user provides new tags that do not already exist, they will be created
     in the database.
     A maximum of 5 tags can be assigned to each photo. The operation is allowed only if the
     current user is the owner of the photo.
 
-    Args:
+    ### Args:
         photo_id (int): The ID of the photo to be updated.
         description (str, optional): The new description for the photo. Defaults to
             "No description".
@@ -141,12 +143,12 @@ async def update_photo(
         current_user (User, optional): The currently authenticated user attempting to update
             the photo. Defaults to Depends(auth_service.get_current_user).
 
-    Raises:
+    ### Raises:
         HTTPException: Raised with status 400 if the user is not authorized to update the photo or
             if more than 5 tags are provided.
         HTTPException: Raised with status 404 if the photo does not exist.
 
-    Returns:
+    ### Returns:
         PhotoUpdate: The updated photo object containing the new description and tags.
     """
     if not tags:
@@ -156,7 +158,6 @@ async def update_photo(
         tags_list = []
         if len(tags) > 0:
             tags_list = tags[0].split(",")
-
         if len(tags_list) > 5:
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
@@ -178,23 +179,26 @@ async def update_photo(
         detail=NOT_AUTH,
     )
 
+
 @router.get("/photo/{photo_id}", response_model=PhotoResponse)
 async def get_photo(photo_id: int, db: Session = Depends(get_db)):
-    """Retrieves a photo by its ID.
-
+    """## Retrieves a photo by its ID.
+    ```
+    /api/posts/photo/_photo_id_
+    ```
     This endpoint fetches and returns the details of a photo from the database using its unique ID.
     The photo's metadata, such as description, tags, and upload date, is returned in the response.
 
-    Args:
+    ### Args:
         photo_id (int): The unique identifier of the photo to retrieve.
         db (Session, optional): The database session used for querying the photo.
             Defaults to Depends(get_db).
 
-    Returns:
+    ### Returns:
         PhotoResponse: An object containing the photo's details such as URL, description, tags,
         and other related information.
 
-    Raises:
+    ### Raises:
         HTTPException: If the photo does not exist, a 404 Not Found error is raised.
     """
     return posts_crud.get_photo(photo_id, db)
@@ -207,14 +211,16 @@ async def add_rate(
     db: Session = Depends(get_db),
     current_user: User = Depends(auth_service.get_current_user)
 ):
-    """Add a rating to a specified photo.
-
+    """## Add a rating to a specified photo.
+    ```
+    /api/posts/photo/_photo_id_/rate
+    ```
     This endpoint allows a user to add a rating to a photo. The rating value must be
     between 1 and 5, inclusive. The user must be authenticated, and the photo must
     exist in the system. If the photo belongs to the current user, the function simply
     returns a success message without adding a rating.
 
-    Args:
+    ### Args:
         photo_id (int): The unique identifier of the photo being rated.
         rate (int): The rating value for the photo (between 1 and 5).
         db (Session, optional): The database session used to retrieve the photo and
@@ -222,11 +228,11 @@ async def add_rate(
         current_user (User, optional): The authenticated user adding the rating.
             Defaults to Depends(auth_service.get_current_user).
 
-    Raises:
+    ### Raises:
         HTTPException: Raised with a 400 status code if the rating is out of the valid range.
         HTTPException: Raised with a 404 status code if the photo is not found in the system.
 
-    Returns:
+    ### Returns:
         dict: A success message indicating that the rating has been assigned or skipped
         if the current user is the owner of the photo.
     """

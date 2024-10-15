@@ -34,7 +34,6 @@ class Auth:
     ALGORITHM = settings.algorithm
     oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
-
     def verify_password(self, plain_password, hashed_password) -> bool:
         """Verify a plain password against a hashed password.
 
@@ -58,8 +57,7 @@ class Auth:
         """
         return self.pwd_context.hash(password)
 
-
-    async def create_access_token(self, data: dict, exp_delta: Optional[float] = None) -> str:
+    async def create_access_token(self, data: dict, exp_delta: Optional[float] = None) -> tuple[str, int]:
         """Create a new JWT access token.
 
         Args:
@@ -69,15 +67,14 @@ class Auth:
 
         Returns:
             str: The encoded JWT access token as a string.
+            int: Exp. time for key
         """
         to_encode = data.copy()
-
         if exp_delta:
             expire = datetime.now(timezone.utc) + timedelta(seconds=exp_delta)
         else:
             expire = datetime.now(timezone.utc) + timedelta(minutes=15)
             exp_delta = 900
-
         to_encode.update(
             {
                 "iat": datetime.now(timezone.utc),
@@ -92,7 +89,6 @@ class Auth:
         )
         return encoded_access_token, exp_delta
 
-
     async def create_refresh_token(self, data: dict, exp_delta: Optional[float] = None) -> str:
         """Create a new JWT refresh token.
 
@@ -105,12 +101,10 @@ class Auth:
             str: The encoded JWT refresh token as a string.
         """
         to_encode = data.copy()
-
         if exp_delta:
             expire = datetime.now(timezone.utc) + timedelta(seconds=exp_delta)
         else:
             expire = datetime.now(timezone.utc) + timedelta(days=7)
-
         to_encode.update(
             {
                 "iat": datetime.now(timezone.utc),
@@ -125,19 +119,21 @@ class Auth:
         )
         return encoded_refresh_token
 
-
     def create_email_token(self, data: dict) -> str:
-        """_summary_
+        """Create a JWT token for email verification.
 
         Args:
-            data (dict): _description_
+            data (dict): A dictionary containing user data to encode in the token.
+                Typically, includes user identifiers, such as 'sub' (subject).
 
         Returns:
-            str: _description_
+            str: The encoded JWT token as a string.
+
+        Raises:
+            Exception: Raises an exception if the encoding process fails.
         """
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + timedelta(days=3)
-
         to_encode.update(
             {
                 "iat": datetime.now(timezone.utc),
@@ -150,7 +146,6 @@ class Auth:
             algorithm=self.ALGORITHM
         )
         return mail_token
-
 
     async def decode_refresh_token(self, refresh_token: str) -> str:
         """Decode a refresh token and extract the user's email.
@@ -173,7 +168,6 @@ class Auth:
             if payload['scope'] == 'refresh_token':
                 email = payload['sub']
                 return email
-
             print(
                 "AuthServices: token is not refresh_token"
             )
@@ -188,19 +182,19 @@ class Auth:
                 detail='AuthServices: Could not validate credentials'
             ) from e
 
-
     async def get_current_user(
-        self,
-        token: str = Depends(oauth2_scheme),
-        db: Session = Depends(get_db),
-        redis = Depends(get_redis)
+            self,
+            token: str = Depends(oauth2_scheme),
+            db: Session = Depends(get_db),
+            redis=Depends(get_redis)
     ) -> User:
         """Retrieve the current authenticated user based on the provided access token.
 
         Args:
             token (str, optional): The access token extracted from the request.
-                Defaults to Depends(oauth2_scheme).
+                Defaults to Depends on(oauth2_scheme).
             db (Session, optional): The database session. Defaults to Depends(get_db).
+            redis: Redis session.
 
         Raises:
             HTTPException: If the token is invalid, expired, the user cannot be found or is
@@ -216,7 +210,6 @@ class Auth:
         )
         try:
             payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
-
             if payload['scope'] == 'access_token':
                 email = payload["sub"]
                 if email is None:
@@ -225,7 +218,6 @@ class Auth:
             else:
                 print("AuthServices: token is not access_token")
                 raise credentials_exception
-
         except JWTError as e:
             print(f"JWT Error in AuthServices: {e}")
             raise credentials_exception from e
@@ -237,9 +229,7 @@ class Auth:
         token = await redis.get(f"user_token:{user.id}")
         if token is None:
             raise credentials_exception
-
         return user
-
 
     async def get_email_from_token(self, token: str):
         """Decodes the provided JWT token to extract the user's email address.
@@ -258,7 +248,6 @@ class Auth:
             payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
             email = payload["sub"]
             return email
-
         except JWTError as e:
             print(f"JWT Error in 'src.auth.auth.get_email_from_token': {e}")
             raise HTTPException(
@@ -266,12 +255,11 @@ class Auth:
                 detail="AuthServices: Invalid token for email verification"
             ) from e
 
-
     async def check_access(
-        self,
-        user: User,
-        owner_id: int
-) -> True:
+            self,
+            user: User,
+            owner_id: int
+    ) -> True:
         """Check if the user has access to a resource.
 
         This function checks whether a user has access to a resource based on their
@@ -292,16 +280,15 @@ class Auth:
         """
         if user.id != owner_id and user.role not in [RoleEnum.moderator, RoleEnum.admin]:
             raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="AuthServices: Access denied"
-        )
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="AuthServices: Access denied"
+            )
         return True
 
-
     async def check_admin(
-        self,
-        user: User,
-        allowed_roles: list|None = None
+            self,
+            user: User,
+            allowed_roles: list | None = None
     ) -> True:
         """Checks if the user has one of the allowed roles.
 
@@ -323,11 +310,11 @@ class Auth:
             allowed_roles = [RoleEnum.moderator, RoleEnum.admin]
         if user.role not in allowed_roles:
             raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="AuthServices: Access denied"
-        )
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="AuthServices: Access denied"
+            )
         return True
 
 
-#  Import this to make all routers use one instanse of class
+#  Import this to make all routers use one instance of class
 auth_service = Auth()
