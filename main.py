@@ -27,7 +27,6 @@ on localhost at port 8000.
 """
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
-import uvicorn
 import redis.asyncio as redis
 from fastapi_limiter import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter
@@ -94,11 +93,3 @@ def read_root():
     return {"message": "PixnTalk API is alive"}
 
 
-if __name__ == "__main__":
-    # uvicorn.run(
-    #     "main:app",
-    #     host="localhost",
-    #     port=8000,
-    #     reload=True
-    # )
-    pass
