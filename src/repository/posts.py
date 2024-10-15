@@ -113,6 +113,7 @@ def update_photo(photo_id: int, description: str, tags: List[str], db: Session):
     Raises:
         HTTPException: If the photo with the specified ID does not exist.
 
+
     Returns:
         dict: A dictionary containing the updated photo details including the description,
             image URL, and tags.
@@ -122,12 +123,12 @@ def update_photo(photo_id: int, description: str, tags: List[str], db: Session):
         raise HTTPException(status_code=404, detail="Photo not found")
     photo.description = description
     photo.tags = tags
-    db.query(Tag).filter(Tag.photo_id == photo_id).delete()
-    for tag_name in tags:
-        tag = Tag(name=tag_name, photo_id=photo_id)
-        db.add(tag)
+
     db.commit()
-    response_data = {
+    db.refresh(photo)
+    
+    response_data =  {
+        "id": photo.id,
         "description": photo.description,
         "image_url": photo.image_url,
         "tags": [tag.name for tag in photo.tags]
